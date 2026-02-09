@@ -1,0 +1,111 @@
+# -----------------------------
+# OS / エディタ共通
+# -----------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.orig
+*.log
+
+# -----------------------------
+# IntelliJ / Android Studio
+# -----------------------------
+# ※ プロジェクト個人設定やキャッシュは除外
+.idea/
+# （もしコードスタイルを共有したい場合は、上を外して下だけを残す）
+# !.idea/codeStyles/
+# !.idea/codeStyles/Project.xml
+# !.idea/codeStyles/codeStyleConfig.xml
+
+*.iml
+
+# -----------------------------
+# Gradle
+# -----------------------------
+.gradle/
+# Gradle Wrapper はリポジトリに含める（重要）
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradlew
+!gradlew.bat
+
+# -----------------------------
+# Android / ビルド生成物
+# -----------------------------
+local.properties
+# すべてのモジュールの build ディレクトリ
+**/build/
+# NDK 関連の中間生成物
+.externalNativeBuild/
+.cxx/
+
+# スクリーンショット/テスト出力など
+captures/
+outputs/
+reports/
+
+# Lint/分析ツールの一時物
+lint/intermediates/
+lint/generated/
+lint/tmp/
+**/lint-results-*.xml
+**/lint-results-*.html
+
+# -----------------------------
+# 署名・鍵（機密）
+# -----------------------------
+*.jks
+*.keystore
+*.pem
+*.p12
+*.key
+signing.properties
+keystore.properties
+
+# -----------------------------
+# Kotlin / KMP 関連の一時物
+# -----------------------------
+.kotlinc/
+.ksp/
+# KAPT（使っていなければ不要）
+kapt.gradle
+**/build/tmp/kapt/
+
+# -----------------------------
+# テスト / 解析
+# -----------------------------
+# UIテストの録画やプロファイルの一時物
+**/androidTest-results/
+**/test-results/
+**/tmp/
+**/outputs/code-coverage/
+**/outputs/androidTest-results/
+
+# -----------------------------
+# 任意：サービス連携（使う時だけアンコメント）
+# -----------------------------
+# Firebase
+# app/google-services.json
+# google-services.json
+# Google Services Gradle Plugin の生成物
+# .google/
+
+# Crashlytics / Sentry などのローカル設定
+# crashlytics-build.properties
+# sentry.properties
+
+# -----------------------------
+# 任意：パッケージング成果物
+# -----------------------------
+*.apk
+*.ap_
+*.aab
+*.ipa
+
+# -----------------------------
+# 任意：ローカル環境ファイル
+# -----------------------------
+.env
+.env.*
+
