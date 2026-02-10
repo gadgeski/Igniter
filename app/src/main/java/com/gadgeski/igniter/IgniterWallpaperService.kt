@@ -2,8 +2,11 @@ package com.gadgeski.igniter
 
 import android.service.wallpaper.WallpaperService
 import android.util.Log
+import android.view.MotionEvent
 import android.view.SurfaceHolder
+import com.gadgeski.igniter.renderer.IgniterRenderer
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.*
 
 @AndroidEntryPoint
 class IgniterWallpaperService : WallpaperService() {
@@ -29,8 +32,13 @@ class IgniterWallpaperService : WallpaperService() {
 
     inner class IgniterEngine : Engine() {
 
+        private val renderer = IgniterRenderer()
+        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        private var drawJob: Job? = null
+
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
+            setTouchEventsEnabled(true) // Enable touch events!
             Log.d(TAG, "Engine.onCreate: Engine created")
         }
 
@@ -38,25 +46,60 @@ class IgniterWallpaperService : WallpaperService() {
             super.onVisibilityChanged(visible)
             Log.d(TAG, "Engine.onVisibilityChanged: visible=$visible")
             if (visible) {
-                draw()
+                startDrawingLoop()
+            } else {
+                stopDrawingLoop()
+            }
+        }
+
+        override fun onTouchEvent(event: MotionEvent?) {
+            super.onTouchEvent(event)
+            event?.let {
+                if (it.action == MotionEvent.ACTION_DOWN || it.action == MotionEvent.ACTION_MOVE) {
+                    renderer.updateTouch(it.x, it.y)
+                }
             }
         }
 
         override fun onDestroy() {
             super.onDestroy()
             Log.d(TAG, "Engine.onDestroy: Engine destroyed")
+            scope.cancel() // Cancel all coroutines
         }
         
-        private fun draw() {
-            // Placeholder for drawing logic
-            // Ideally we would want to draw black screen here as requested
+        private fun startDrawingLoop() {
+            if (drawJob?.isActive == true) return
+            Log.d(TAG, "Loop started")
+            drawJob = scope.launch {
+                while (isActive) {
+                    drawFrame()
+                    delay(16) // Target ~60fps
+                }
+            }
+        }
+
+        private fun stopDrawingLoop() {
+             drawJob?.cancel()
+             Log.d(TAG, "Loop stopped")
+        }
+
+        private fun drawFrame() {
             val holder = surfaceHolder
-            val canvas = holder.lockCanvas()
-            if (canvas != null) {
-                try {
-                    canvas.drawColor(android.graphics.Color.BLACK)
-                } finally {
-                    holder.unlockCanvasAndPost(canvas)
+            var canvas: android.graphics.Canvas? = null
+            try {
+                canvas = holder.lockCanvas()
+                if (canvas != null) {
+                    renderer.draw(canvas)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in drawFrame", e)
+            } finally {
+                if (canvas != null) {
+                    try {
+                        holder.unlockCanvasAndPost(canvas)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error unlocking canvas", e)
+                    }
                 }
             }
         }
