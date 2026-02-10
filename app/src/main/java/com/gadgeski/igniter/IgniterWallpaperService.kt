@@ -42,6 +42,12 @@ class IgniterWallpaperService : WallpaperService() {
             Log.d(TAG, "Engine.onCreate: Engine created")
         }
 
+        override fun onSurfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+            super.onSurfaceChanged(holder, format, width, height)
+            Log.d(TAG, "Engine.onSurfaceChanged: $width x $height")
+            renderer.setSurfaceSize(width, height)
+        }
+
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
             Log.d(TAG, "Engine.onVisibilityChanged: visible=$visible")
