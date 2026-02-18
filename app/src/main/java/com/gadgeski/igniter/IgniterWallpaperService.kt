@@ -1,5 +1,9 @@
 package com.gadgeski.igniter
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.service.wallpaper.WallpaperService
 import android.util.Log
 import android.view.MotionEvent
@@ -30,11 +34,20 @@ class IgniterWallpaperService : WallpaperService() {
         return IgniterEngine()
     }
 
-    inner class IgniterEngine : Engine() {
+    inner class IgniterEngine : Engine(), SensorEventListener {
 
         private val renderer = IgniterRenderer()
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         private var drawJob: Job? = null
+
+        // センサー管理
+        // バッテリー対策: visible=true の時だけリスナーを登録する
+        private val sensorManager: SensorManager by lazy {
+            getSystemService(SENSOR_SERVICE) as SensorManager
+        }
+        private val accelerometer: Sensor? by lazy {
+            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        }
 
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
@@ -53,8 +66,18 @@ class IgniterWallpaperService : WallpaperService() {
             Log.d(TAG, "Engine.onVisibilityChanged: visible=$visible")
             if (visible) {
                 startDrawingLoop()
+                // 表示時のみセンサーリスナーを登録（バッテリー対策）
+                accelerometer?.let {
+                    sensorManager.registerListener(
+                        this,
+                        it,
+                        SensorManager.SENSOR_DELAY_GAME // ゲーム用: 約50Hz
+                    )
+                }
             } else {
                 stopDrawingLoop()
+                // 非表示時はセンサーリスナーを解除（バッテリー対策）
+                sensorManager.unregisterListener(this)
             }
         }
 
@@ -67,12 +90,33 @@ class IgniterWallpaperService : WallpaperService() {
             }
         }
 
+        // --- SensorEventListener ---
+
+        override fun onSensorChanged(event: SensorEvent?) {
+            // TYPE_ACCELEROMETER: values[0]=X, values[1]=Y, values[2]=Z
+            // X軸: 左傾き=正値, 右傾き=負値 (重力の影響)
+            // 範囲は約 -10 ~ +10 (m/s²)
+            event?.let {
+                if (it.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                    // X軸の傾きをRendererへ渡す
+                    renderer.setTilt(it.values[0])
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // 精度変化は今回は無視
+        }
+
+        // --- Lifecycle ---
+
         override fun onDestroy() {
             super.onDestroy()
             Log.d(TAG, "Engine.onDestroy: Engine destroyed")
+            sensorManager.unregisterListener(this) // 念のため解除
             scope.cancel() // Cancel all coroutines
         }
-        
+
         private fun startDrawingLoop() {
             if (drawJob?.isActive == true) return
             Log.d(TAG, "Loop started")
@@ -85,8 +129,8 @@ class IgniterWallpaperService : WallpaperService() {
         }
 
         private fun stopDrawingLoop() {
-             drawJob?.cancel()
-             Log.d(TAG, "Loop stopped")
+            drawJob?.cancel()
+            Log.d(TAG, "Loop stopped")
         }
 
         private fun drawFrame() {

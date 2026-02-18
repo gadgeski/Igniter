@@ -4,7 +4,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PathMeasure
 import com.gadgeski.igniter.model.Particle
 
 class IgniterRenderer {
@@ -19,19 +18,28 @@ class IgniterRenderer {
     private val path = Path()
 
     private val particleSystem = ParticleSystem()
-    private val hexGridSystem = HexGridSystem()
-    
+    private val scanlineSystem = ScanlineSystem()
+
     private var surfaceWidth = 0
     private var surfaceHeight = 0
 
     fun setSurfaceSize(width: Int, height: Int) {
         surfaceWidth = width
         surfaceHeight = height
-        hexGridSystem.resize(width, height)
+        // ScanlineSystemはresizeで線座標をキャッシュする
+        scanlineSystem.resize(width, height)
     }
 
     fun updateTouch(x: Float, y: Float) {
         particleSystem.ignite(x, y)
+    }
+
+    /**
+     * 加速度センサーから取得したX軸傾き値を設定する。
+     * 範囲: -10 ~ +10
+     */
+    fun setTilt(tiltX: Float) {
+        particleSystem.setTilt(tiltX)
     }
 
     fun draw(canvas: Canvas) {
@@ -40,9 +48,9 @@ class IgniterRenderer {
 
         // Clear background
         canvas.drawColor(Color.BLACK)
-        
-        // Draw Background Grid
-        hexGridSystem.draw(canvas)
+
+        // Draw CRT Scanlines (HexGridの代替)
+        scanlineSystem.draw(canvas)
 
         // Draw particles
         val particles = particleSystem.particles
@@ -55,48 +63,27 @@ class IgniterRenderer {
 
     private fun drawParticleTrail(canvas: Canvas, p: Particle) {
         path.reset()
-        
+
         // Start from current position
         path.moveTo(p.x, p.y)
 
-        // Trace back history
-        // history is a ring buffer implicitly, but we just stored it linearly in the model for simplicity
-        // Ideally we connect points.
-        // Let's just draw lines to history points for now.
-        // To make a smooth trail, we should iterate backwards from current.
-        
-        var currentIndex = p.historyIndex
-        var pointsDrawn = 0
-        
-        // Correct way to read ring buffer (newest is at historyIndex - 1)
-        
-        var iterIndex = currentIndex - 1
+        var iterIndex = p.historyIndex - 1
         if (iterIndex < 0) iterIndex = p.historyX.size - 1
-
-        var lastX = p.x
-        var lastY = p.y
-
-        // Draw segments with varying opacity? 
-        // Canvas.drawPath uses one paint. If we want gradients, we need Shader or multiple drawLines.
-        // For "Laser Sparks", a solid path with single color fading by alpha might be tricky in one drawPath call without Shader.
-        // Let's use a simpler approach: Draw the path with the particle's color, alpha based on `life`.
-        // AND maybe a gradient shader is overkill for performance.
-        // Let's just draw the path as a solid "streak" for now, fading by life.
 
         paint.color = p.color
         paint.alpha = (p.life * 255).toInt().coerceIn(0, 255)
         paint.strokeWidth = p.strokeWidth
 
         for (i in 0 until p.historyCount) {
-             val histX = p.historyX[iterIndex]
-             val histY = p.historyY[iterIndex]
-             
-             path.lineTo(histX, histY)
-             
-             iterIndex--
-             if (iterIndex < 0) iterIndex = p.historyX.size - 1
+            val histX = p.historyX[iterIndex]
+            val histY = p.historyY[iterIndex]
+
+            path.lineTo(histX, histY)
+
+            iterIndex--
+            if (iterIndex < 0) iterIndex = p.historyX.size - 1
         }
-        
+
         canvas.drawPath(path, paint)
     }
 }
