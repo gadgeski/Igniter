@@ -15,16 +15,16 @@ class ScanlineSystem {
         // 4dp相当のピクセル間隔（density非依存で固定値を使用）
         private const val LINE_SPACING_PX = 8f
         // 基本Alpha値（極薄）
-        private const val BASE_ALPHA = 15
+        private const val BASE_ALPHA = 50
         // チラつきのランダム変動幅
-        private const val FLICKER_RANGE = 5
+        private const val FLICKER_RANGE = 15
     }
 
     private val paint = Paint().apply {
         color = Color.WHITE
-        strokeWidth = 1f
+        strokeWidth = 3f
         style = Paint.Style.STROKE
-        isAntiAlias = false // 直線なのでアンチエイリアス不要（パフォーマンス優先）
+        isAntiAlias = false
     }
 
     // resize() でキャッシュされた線座標配列
@@ -63,7 +63,7 @@ class ScanlineSystem {
 
         // チラつき: draw() ごとにAlphaをランダム変動
         val flicker = Random.nextInt(-FLICKER_RANGE, FLICKER_RANGE + 1)
-        val alpha = (BASE_ALPHA + flicker).coerceIn(5, 30)
+        val alpha = (BASE_ALPHA + flicker).coerceIn(10, 80)
         paint.alpha = alpha
 
         canvas.drawLines(lineCoords, 0, lineCount * 4, paint)
