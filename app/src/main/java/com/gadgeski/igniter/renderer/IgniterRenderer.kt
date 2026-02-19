@@ -83,7 +83,7 @@ class IgniterRenderer {
             iterIndex--
             if (iterIndex < 0) iterIndex = p.historyX.size - 1
         }
-        
+
         canvas.drawPath(path, paint)
     }
 }
