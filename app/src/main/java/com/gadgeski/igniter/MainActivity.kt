@@ -51,12 +51,12 @@ class MainActivity : ComponentActivity() {
                 ComponentName(this, IgniterWallpaperService::class.java)
             )
             startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Fallback for older devices or if specific action fails
             try {
                 val intent = Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER)
                 startActivity(intent)
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(this, "Failed to open wallpaper picker", Toast.LENGTH_SHORT).show()
             }
         }

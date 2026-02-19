@@ -74,7 +74,7 @@ class IgniterRenderer {
         paint.alpha = (p.life * 255).toInt().coerceIn(0, 255)
         paint.strokeWidth = p.strokeWidth
 
-        for (i in 0 until p.historyCount) {
+        repeat(p.historyCount) {
             val histX = p.historyX[iterIndex]
             val histY = p.historyY[iterIndex]
 
@@ -83,7 +83,7 @@ class IgniterRenderer {
             iterIndex--
             if (iterIndex < 0) iterIndex = p.historyX.size - 1
         }
-
+        
         canvas.drawPath(path, paint)
     }
 }
