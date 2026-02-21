@@ -1,6 +1,5 @@
 package com.gadgeski.igniter
 
-import android.opengl.GLSurfaceView
 import android.service.wallpaper.WallpaperService
 import android.util.Log
 import android.view.MotionEvent
@@ -8,7 +7,16 @@ import android.view.SurfaceHolder
 import com.gadgeski.igniter.opengl.EglHelper
 import com.gadgeski.igniter.renderer.IgniterRenderer
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Executors
 
 @AndroidEntryPoint
 class IgniterWallpaperService : WallpaperService() {
@@ -42,8 +50,12 @@ class IgniterWallpaperService : WallpaperService() {
         private val renderer = IgniterRenderer(applicationContext)
         private val eglHelper = EglHelper()
 
-        // 描画ループ用
-        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        // 【最重要】OpenGL専用の単一スレッドを作成（EGLコンテキストを維持するため）
+        private val glExecutor = Executors.newSingleThreadExecutor()
+        private val glDispatcher = glExecutor.asCoroutineDispatcher()
+
+        // すべてのGL処理をこのスコープ（専用スレッド）で実行する
+        private val scope = CoroutineScope(SupervisorJob() + glDispatcher)
         private var drawJob: Job? = null
 
         // サーフェスの準備完了フラグ
@@ -64,7 +76,7 @@ class IgniterWallpaperService : WallpaperService() {
             Log.d(TAG, "Engine.onSurfaceCreated")
 
             // EGL の初期化と OpenGL リソースのセットアップは GL スレッドで行う
-            scope.launch(Dispatchers.Default) {
+            scope.launch {
                 if (holder == null) return@launch
 
                 val success = eglHelper.init(holder)
@@ -92,8 +104,11 @@ class IgniterWallpaperService : WallpaperService() {
         ) {
             super.onSurfaceChanged(holder, format, width, height)
             Log.d(TAG, "Engine.onSurfaceChanged: $width x $height")
-            if (surfaceReady) {
-                renderer.onSurfaceChanged(null, width, height)
+
+            scope.launch {
+                if (surfaceReady) {
+                    renderer.onSurfaceChanged(null, width, height)
+                }
             }
         }
 
@@ -101,8 +116,9 @@ class IgniterWallpaperService : WallpaperService() {
             super.onSurfaceDestroyed(holder)
             Log.d(TAG, "Engine.onSurfaceDestroyed")
             surfaceReady = false
-            // GL スレッド上でリソースを解放してから EGL 破棄
-            scope.launch(Dispatchers.Default) {
+
+            // 【修正】非同期ではなく、同期(runBlocking)で確実にGLスレッド上でリソースを解放する
+            runBlocking(glDispatcher) {
                 renderer.release()
                 eglHelper.destroySurface()
             }
@@ -122,11 +138,15 @@ class IgniterWallpaperService : WallpaperService() {
             super.onDestroy()
             Log.d(TAG, "Engine.onDestroy")
             stopDrawingLoop()
-            scope.launch(Dispatchers.Default) {
-                renderer.release()
+
+            // エンジン破棄時にEGLコンテキストも完全に解放
+            runBlocking(glDispatcher) {
                 eglHelper.release()
             }
+
+            // 全てが終わってからスレッドプールを閉じる
             scope.cancel()
+            glExecutor.shutdown()
         }
 
         // -------------------------------------------------------------------------
@@ -151,7 +171,7 @@ class IgniterWallpaperService : WallpaperService() {
             if (drawJob?.isActive == true) return
             Log.d(TAG, "Draw loop started")
 
-            drawJob = scope.launch(Dispatchers.Default) {
+            drawJob = scope.launch {
                 while (isActive) {
                     if (surfaceReady && eglHelper.isReady) {
                         drawFrame()
