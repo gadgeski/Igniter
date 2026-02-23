@@ -18,10 +18,10 @@ const float GRID_SCALE      = 18.0;   // グリッドの格子数
 const float GRID_LINE_WIDTH = 0.04;   // グリッドラインの太さ (UV単位)
 const float GRID_RADIUS     = 0.55;   // グリッドが表示される半径 (UV単位)
 
-// サイバーパンクカラー定義
-const vec3 COLOR_RIPPLE = vec3(0.0, 1.0, 0.95);   // シアン #00FFF2
-const vec3 COLOR_GRID   = vec3(0.0, 0.5, 0.55);   // ダークシアン #00808C
-const vec3 COLOR_CORE   = vec3(0.6, 1.0, 1.0);    // 明るいシアン (中心コア)
+// イグナイターカラー定義 (エレクトリック・オレンジ)
+const vec3 COLOR_RIPPLE = vec3(1.0, 0.37, 0.0);   // ネオンオレンジ
+const vec3 COLOR_GRID   = vec3(1.0, 0.4, 0.1);    // 控えめなオレンジ
+const vec3 COLOR_CORE   = vec3(1.0, 0.55, 0.1);   // 明るい純粋なオレンジ
 
 void main() {
     // タッチ座標系: 画面のアスペクト比を考慮して距離計算を正確にする
