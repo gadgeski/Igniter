@@ -55,6 +55,10 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var screenWidth  = 1f
     private var screenHeight = 1f
 
+    // --- 加速度（傾き）状態 ---
+    @Volatile private var tiltX = 0f
+    @Volatile private var tiltY = 0f
+
     // --- タッチ状態（スレッドセーフのため @Volatile）---
     @Volatile private var touchNormX = 0.5f    // 正規化タッチ座標 X (0〜1)
     @Volatile private var touchNormY = 0.5f    // 正規化タッチ座標 Y (0〜1, 上=0)
@@ -132,6 +136,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         // 頂点バッファをバインド
         val posLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
         val uvLoc  = GLES20.glGetAttribLocation(backgroundProgram, "a_TexCoord")
+        val tiltLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Tilt")
 
         quadBuffer.position(0)
         GLES20.glVertexAttribPointer(posLoc, 2, GLES20.GL_FLOAT, false, VERTEX_STRIDE, quadBuffer)
@@ -145,6 +150,11 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, backgroundTextureId)
         GLES20.glUniform1i(GLES20.glGetUniformLocation(backgroundProgram, "u_Texture"), 0)
+
+        // シェーダーの u_Tilt に現在の傾きを渡す
+        if (tiltLoc >= 0) {
+            GLES20.glUniform2f(tiltLoc, tiltX, tiltY)
+        }
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
@@ -191,6 +201,14 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     // -------------------------------------------------------------------------
     // 外部から呼ばれるAPI
     // -------------------------------------------------------------------------
+
+    /**
+     * デバイスの傾き（加速度）センサーの値を更新する。
+     */
+    fun updateTilt(x: Float, y: Float) {
+        tiltX = x
+        tiltY = y
+    }
 
     /**
      * タッチイベントを受け取り、波紋アニメーションを（再）開始する。

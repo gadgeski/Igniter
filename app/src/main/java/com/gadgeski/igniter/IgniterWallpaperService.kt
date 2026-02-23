@@ -1,5 +1,9 @@
 package com.gadgeski.igniter
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.service.wallpaper.WallpaperService
 import android.util.Log
 import android.view.MotionEvent
@@ -24,6 +28,7 @@ class IgniterWallpaperService : WallpaperService() {
     companion object {
         private const val TAG = "IgniterWallpaperService"
         private const val TARGET_FPS_MS = 16L  // ~60fps
+        private const val ALPHA = 0.1f
     }
 
     override fun onCreate() {
@@ -45,7 +50,7 @@ class IgniterWallpaperService : WallpaperService() {
     // Engine
     // =========================================================================
 
-    inner class IgniterEngine : Engine() {
+    inner class IgniterEngine : Engine(), SensorEventListener {
 
         private val renderer = IgniterRenderer(applicationContext)
         private val eglHelper = EglHelper()
@@ -61,6 +66,14 @@ class IgniterWallpaperService : WallpaperService() {
         // サーフェスの準備完了フラグ
         @Volatile private var surfaceReady = false
 
+        // センサー関連
+        private var sensorManager: SensorManager? = null
+        private var accelerometer: Sensor? = null
+        
+        // ローパスフィルタ用（0.0: 無反応 〜 1.0: そのまま）
+        private var smoothedTiltX = 0f
+        private var smoothedTiltY = 0f
+
         // -------------------------------------------------------------------------
         // ライフサイクル
         // -------------------------------------------------------------------------
@@ -69,6 +82,9 @@ class IgniterWallpaperService : WallpaperService() {
             super.onCreate(surfaceHolder)
             setTouchEventsEnabled(true)
             Log.d(TAG, "Engine.onCreate")
+
+            sensorManager = getSystemService(SENSOR_SERVICE) as? SensorManager
+            accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         }
 
         override fun onSurfaceCreated(holder: SurfaceHolder?) {
@@ -128,8 +144,10 @@ class IgniterWallpaperService : WallpaperService() {
             super.onVisibilityChanged(visible)
             Log.d(TAG, "Engine.onVisibilityChanged: visible=$visible")
             if (visible) {
+                sensorManager?.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME)
                 startDrawingLoop()
             } else {
+                sensorManager?.unregisterListener(this)
                 stopDrawingLoop()
             }
         }
@@ -137,6 +155,7 @@ class IgniterWallpaperService : WallpaperService() {
         override fun onDestroy() {
             super.onDestroy()
             Log.d(TAG, "Engine.onDestroy")
+            sensorManager?.unregisterListener(this)
             stopDrawingLoop()
 
             // エンジン破棄時にEGLコンテキストも完全に解放
@@ -161,6 +180,27 @@ class IgniterWallpaperService : WallpaperService() {
                     MotionEvent.ACTION_MOVE -> renderer.updateTouch(it.x, it.y)
                 }
             }
+        }
+
+        // -------------------------------------------------------------------------
+        // センサーイベント
+        // -------------------------------------------------------------------------
+
+        override fun onSensorChanged(event: SensorEvent?) {
+            if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+                val x = event.values[0]
+                val y = event.values[1]
+
+                // ローパスフィルタ適用
+                smoothedTiltX = ALPHA * x + (1 - ALPHA) * smoothedTiltX
+                smoothedTiltY = ALPHA * y + (1 - ALPHA) * smoothedTiltY
+
+                renderer.updateTilt(smoothedTiltX, smoothedTiltY)
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Use it if needed
         }
 
         // -------------------------------------------------------------------------
