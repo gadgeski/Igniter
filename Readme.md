@@ -68,3 +68,5 @@ Igniterは、見た目の美しさだけでなく、Androidの壁紙サービス
 4. Run the app on a physical device (Emulators may not fully support hardware-accelerated live wallpapers and sensors).
     
 5. Follow the on-screen prompt or go to your device's Wallpaper settings to apply **Igniter**.
+
+Designed & Engineered by Gemini customized with Gem.
