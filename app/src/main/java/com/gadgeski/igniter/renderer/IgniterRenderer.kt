@@ -42,6 +42,9 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var rippleProgram = 0
     private var backgroundTextureId = 0
 
+    // 描画開始時刻 (u_Time計算用)
+    private var rendererStartMs = 0L
+
     // 頂点バッファを宣言と同時に初期化（警告解消・安全性向上）
     private val quadBuffer: FloatBuffer = ByteBuffer.allocateDirect(FULLSCREEN_QUAD.size * 4)
         .order(ByteOrder.nativeOrder())
@@ -71,6 +74,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         Log.d(TAG, "onSurfaceCreated")
+        rendererStartMs = SystemClock.elapsedRealtime()
 
         GLES20.glClearColor(0f, 0f, 0f, 1f)
 
@@ -94,7 +98,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
 
         // 背景テクスチャをロード
-        backgroundTextureId = TextureHelper.loadTexture(context, R.drawable.igniter_bg)
+        backgroundTextureId = TextureHelper.loadTexture(context, R.drawable.bg_summer_beach)
         if (backgroundTextureId == 0) {
             Log.e(TAG, "Background texture load failed!")
         }
@@ -154,6 +158,13 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         // シェーダーの u_Tilt に現在の傾きを渡す
         if (tiltLoc >= 0) {
             GLES20.glUniform2f(tiltLoc, tiltX, tiltY)
+        }
+
+        // --- u_Time for water ripple/caustics ---
+        val timeLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Time")
+        if (timeLoc >= 0) {
+            val elapsed = (SystemClock.elapsedRealtime() - rendererStartMs) / 1000f
+            GLES20.glUniform1f(timeLoc, elapsed)
         }
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
