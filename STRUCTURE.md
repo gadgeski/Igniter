@@ -15,6 +15,7 @@ Igniter/
 │       │                   └── ExampleInstrumentedTest.kt
 │       ├── main
 │       │   ├── AndroidManifest.xml
+│       │   ├── ic_launcher-playstore.png
 │       │   ├── java
 │       │   │   └── com
 │       │   │       └── gadgeski
@@ -22,12 +23,12 @@ Igniter/
 │       │   │               ├── IgniterApp.kt
 │       │   │               ├── IgniterWallpaperService.kt
 │       │   │               ├── MainActivity.kt
-│       │   │               ├── model
-│       │   │               │   └── Particle.kt
+│       │   │               ├── opengl
+│       │   │               │   ├── EglHelper.kt
+│       │   │               │   ├── ShaderHelper.kt
+│       │   │               │   └── TextureHelper.kt
 │       │   │               ├── renderer
-│       │   │               │   ├── IgniterRenderer.kt
-│       │   │               │   ├── ParticleSystem.kt
-│       │   │               │   └── ScanlineSystem.kt
+│       │   │               │   └── IgniterRenderer.kt
 │       │   │               └── ui
 │       │   │                   └── theme
 │       │   │                       ├── Color.kt
@@ -36,25 +37,37 @@ Igniter/
 │       │   └── res
 │       │       ├── drawable
 │       │       │   ├── ic_launcher_background.xml
-│       │       │   └── ic_launcher_foreground.xml
+│       │       │   ├── ic_launcher_foreground.xml
+│       │       │   └── igniter_bg.webp
 │       │       ├── mipmap-anydpi
+│       │       ├── mipmap-anydpi-v26
 │       │       │   ├── ic_launcher.xml
 │       │       │   └── ic_launcher_round.xml
 │       │       ├── mipmap-hdpi
 │       │       │   ├── ic_launcher.webp
+│       │       │   ├── ic_launcher_foreground.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-mdpi
 │       │       │   ├── ic_launcher.webp
+│       │       │   ├── ic_launcher_foreground.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-xhdpi
 │       │       │   ├── ic_launcher.webp
+│       │       │   ├── ic_launcher_foreground.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-xxhdpi
 │       │       │   ├── ic_launcher.webp
+│       │       │   ├── ic_launcher_foreground.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-xxxhdpi
 │       │       │   ├── ic_launcher.webp
+│       │       │   ├── ic_launcher_foreground.webp
 │       │       │   └── ic_launcher_round.webp
+│       │       ├── raw
+│       │       │   ├── background_fragment_shader.glsl
+│       │       │   ├── background_vertex_shader.glsl
+│       │       │   ├── ripple_fragment_shader.glsl
+│       │       │   └── ripple_vertex_shader.glsl
 │       │       ├── values
 │       │       │   ├── colors.xml
 │       │       │   ├── strings.xml
@@ -81,5 +94,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-34 directories, 47 files
+36 directories, 58 files
 ```
