@@ -1,5 +1,7 @@
 package com.gadgeski.igniter
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -10,6 +12,7 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 import com.gadgeski.igniter.opengl.EglHelper
 import com.gadgeski.igniter.renderer.IgniterRenderer
+import com.gadgeski.igniter.settings.Theme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -74,6 +77,22 @@ class IgniterWallpaperService : WallpaperService() {
         private var smoothedTiltX = 0f
         private var smoothedTiltY = 0f
 
+        // テーマ監視
+        private lateinit var prefs: SharedPreferences
+        private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+            if (key == "selected_theme") {
+                val themeName = sharedPreferences.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
+                val theme = try { Theme.valueOf(themeName) } catch (e: Exception) { Theme.CYBERPUNK }
+                Log.d(TAG, "Theme changed to $theme, scheduling reload on GL thread")
+                // 安全にGLスレッドでテーマを適用する
+                scope.launch {
+                    if (surfaceReady && eglHelper.isReady) {
+                        renderer.setTheme(theme)
+                    }
+                }
+            }
+        }
+
         // -------------------------------------------------------------------------
         // ライフサイクル
         // -------------------------------------------------------------------------
@@ -82,6 +101,9 @@ class IgniterWallpaperService : WallpaperService() {
             super.onCreate(surfaceHolder)
             setTouchEventsEnabled(true)
             Log.d(TAG, "Engine.onCreate")
+
+            prefs = applicationContext.getSharedPreferences("igniter_prefs", Context.MODE_PRIVATE)
+            prefs.registerOnSharedPreferenceChangeListener(prefsListener)
 
             sensorManager = getSystemService(SENSOR_SERVICE) as? SensorManager
             accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -101,8 +123,11 @@ class IgniterWallpaperService : WallpaperService() {
                     return@launch
                 }
 
-                // GL コンテキストがカレントになっている前提で Renderer を初期化
+                // GL コンテキストがカレントになっている前提で Renderer を初期化し、初期テーマをロード
                 renderer.onSurfaceCreated(null, null)
+                val themeName = prefs.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
+                val initialTheme = try { Theme.valueOf(themeName) } catch(e: Exception) { Theme.CYBERPUNK }
+                renderer.setTheme(initialTheme)
 
                 val size = holder.surfaceFrame
                 renderer.onSurfaceChanged(null, size.width(), size.height())
@@ -155,6 +180,7 @@ class IgniterWallpaperService : WallpaperService() {
         override fun onDestroy() {
             super.onDestroy()
             Log.d(TAG, "Engine.onDestroy")
+            prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
             sensorManager?.unregisterListener(this)
             stopDrawingLoop()
 

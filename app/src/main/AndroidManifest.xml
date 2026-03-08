@@ -27,6 +27,13 @@
         </service>
 
         <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="true"
+            android:label="Settings"
+            android:theme="@style/Theme.Igniter">
+        </activity>
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Igniter">

@@ -8,6 +8,7 @@ import android.util.Log
 import com.gadgeski.igniter.R
 import com.gadgeski.igniter.opengl.ShaderHelper
 import com.gadgeski.igniter.opengl.TextureHelper
+import com.gadgeski.igniter.settings.Theme
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -41,6 +42,8 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var backgroundProgram = 0
     private var rippleProgram = 0
     private var backgroundTextureId = 0
+
+    private var currentTheme = Theme.CYBERPUNK
 
     // 描画開始時刻 (u_Time計算用)
     private var rendererStartMs = 0L
@@ -82,26 +85,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
-        // シェーダープログラムをビルド
-        backgroundProgram = ShaderHelper.buildProgram(
-            context,
-            R.raw.background_vertex_shader,
-            R.raw.background_fragment_shader
-        )
-        rippleProgram = ShaderHelper.buildProgram(
-            context,
-            R.raw.ripple_vertex_shader,
-            R.raw.ripple_fragment_shader
-        )
-        if (backgroundProgram == 0 || rippleProgram == 0) {
-            Log.e(TAG, "Shader program build failed!")
-        }
-
-        // 背景テクスチャをロード
-        backgroundTextureId = TextureHelper.loadTexture(context, R.drawable.bg_summer_beach)
-        if (backgroundTextureId == 0) {
-            Log.e(TAG, "Background texture load failed!")
-        }
+        // Note: Shader and texture loading is now handled in setTheme()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -212,6 +196,54 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     // -------------------------------------------------------------------------
     // 外部から呼ばれるAPI
     // -------------------------------------------------------------------------
+
+    /**
+     * テーマを変更する。必ずGLスレッドから呼ぶこと。
+     */
+    fun setTheme(theme: Theme) {
+        if (currentTheme == theme && backgroundProgram != 0) return // Already loaded
+        Log.d(TAG, "setTheme: changing theme to $theme")
+        currentTheme = theme
+
+        // 既存のリソースをいったん解放する
+        release()
+
+        val bgTextureRes: Int
+        val bgFragmentStr: Int
+        val rippleFragmentStr: Int
+
+        when (theme) {
+            Theme.CYBERPUNK -> {
+                bgTextureRes = R.drawable.igniter_bg
+                bgFragmentStr = R.raw.bg_cyberpunk_fragment_shader
+                rippleFragmentStr = R.raw.ripple_cyberpunk_fragment_shader
+            }
+            Theme.SUMMER_BEACH -> {
+                bgTextureRes = R.drawable.bg_summer_beach
+                bgFragmentStr = R.raw.bg_beach_fragment_shader
+                rippleFragmentStr = R.raw.ripple_beach_fragment_shader
+            }
+        }
+
+        backgroundProgram = ShaderHelper.buildProgram(
+            context,
+            R.raw.background_vertex_shader,
+            bgFragmentStr
+        )
+        rippleProgram = ShaderHelper.buildProgram(
+            context,
+            R.raw.ripple_vertex_shader,
+            rippleFragmentStr
+        )
+        if (backgroundProgram == 0 || rippleProgram == 0) {
+            Log.e(TAG, "Shader program build failed for $theme!")
+        }
+
+        backgroundTextureId = TextureHelper.loadTexture(context, bgTextureRes)
+        if (backgroundTextureId == 0) {
+            Log.e(TAG, "Background texture load failed for $theme!")
+        }
+    }
 
     /**
      * デバイスの傾き（加速度）センサーの値を更新する。
