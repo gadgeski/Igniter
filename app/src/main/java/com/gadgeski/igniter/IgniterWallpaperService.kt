@@ -1,6 +1,5 @@
 package com.gadgeski.igniter
 
-import android.content.Context
 import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -24,6 +23,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
+import kotlin.math.hypot
 
 @AndroidEntryPoint
 class IgniterWallpaperService : WallpaperService() {
@@ -77,12 +77,17 @@ class IgniterWallpaperService : WallpaperService() {
         private var smoothedTiltX = 0f
         private var smoothedTiltY = 0f
 
+        // 追加: 動きの検知用
+        private var lastAccelX = 0f
+        private var lastAccelY = 0f
+        private var isFirstSensorEvent = true
+
         // テーマ監視
         private lateinit var prefs: SharedPreferences
         private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
             if (key == "selected_theme") {
                 val themeName = sharedPreferences.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
-                val theme = try { Theme.valueOf(themeName) } catch (e: Exception) { Theme.CYBERPUNK }
+                val theme = try { Theme.valueOf(themeName) } catch (_: Exception) { Theme.CYBERPUNK }
                 Log.d(TAG, "Theme changed to $theme, scheduling reload on GL thread")
                 // 安全にGLスレッドでテーマを適用する
                 scope.launch {
@@ -102,7 +107,8 @@ class IgniterWallpaperService : WallpaperService() {
             setTouchEventsEnabled(true)
             Log.d(TAG, "Engine.onCreate")
 
-            prefs = applicationContext.getSharedPreferences("igniter_prefs", Context.MODE_PRIVATE)
+            // Context. を削除して冗長な修飾名を解消
+            prefs = applicationContext.getSharedPreferences("igniter_prefs", MODE_PRIVATE)
             prefs.registerOnSharedPreferenceChangeListener(prefsListener)
 
             sensorManager = getSystemService(SENSOR_SERVICE) as? SensorManager
@@ -126,7 +132,7 @@ class IgniterWallpaperService : WallpaperService() {
                 // GL コンテキストがカレントになっている前提で Renderer を初期化し、初期テーマをロード
                 renderer.onSurfaceCreated(null, null)
                 val themeName = prefs.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
-                val initialTheme = try { Theme.valueOf(themeName) } catch(e: Exception) { Theme.CYBERPUNK }
+                val initialTheme = try { Theme.valueOf(themeName) } catch(_: Exception) { Theme.CYBERPUNK }
                 renderer.setTheme(initialTheme)
 
                 val size = holder.surfaceFrame
@@ -217,11 +223,31 @@ class IgniterWallpaperService : WallpaperService() {
                 val x = event.values[0]
                 val y = event.values[1]
 
-                // ローパスフィルタ適用
+                // 1. 傾き（パララックス用）のローパスフィルタ
                 smoothedTiltX = ALPHA * x + (1 - ALPHA) * smoothedTiltX
                 smoothedTiltY = ALPHA * y + (1 - ALPHA) * smoothedTiltY
-
                 renderer.updateTilt(smoothedTiltX, smoothedTiltY)
+
+                // 2. 動きの大きさ（波のうねり用）を計算してRendererに送る
+                if (isFirstSensorEvent) {
+                    lastAccelX = x
+                    lastAccelY = y
+                    isFirstSensorEvent = false
+                    return
+                }
+
+                val deltaX = x - lastAccelX
+                val deltaY = y - lastAccelY
+                // 三平方の定理で動きのベクトル量を計算 (Kotlinのモダンな関数 hypot を使用)
+                val movement = hypot(deltaX, deltaY)
+
+                lastAccelX = x
+                lastAccelY = y
+
+                // ノイズを省き、ある程度動いた時だけ波を発生させる
+                if (movement > 0.5f) {
+                    renderer.addWaveMomentum(movement)
+                }
             }
         }
 

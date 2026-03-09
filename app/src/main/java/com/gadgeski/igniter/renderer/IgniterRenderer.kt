@@ -38,6 +38,15 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         private const val RIPPLE_DURATION   = 2.0f        // 秒
     }
 
+    // --- 既存の変数たち ---
+    private var uTimeLocation = 0
+    private var uTiltLocation = 0
+
+    // ▼▼▼ 波の連動用変数 ▼▼▼
+    private var targetWaveIntensity = 0.2f
+    private var currentWaveIntensity = 0.2f
+    private var uWaveIntensityLocation = 0
+
     // --- OpenGL リソース ---
     private var backgroundProgram = 0
     private var rippleProgram = 0
@@ -96,6 +105,13 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     override fun onDrawFrame(gl: GL10?) {
+        // 1. 波の強さの減衰ロジック（毎フレーム静かな値に戻ろうとする）
+        // Math.max ではなく Kotlin の coerceAtLeast を使用して警告を解消
+        targetWaveIntensity = (targetWaveIntensity - 0.05f).coerceAtLeast(0.2f)
+
+        // 現在の値をターゲットに向けて滑らかに補間
+        currentWaveIntensity += (targetWaveIntensity - currentWaveIntensity) * 0.1f
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
         // 1. 背景テクスチャを描画
@@ -124,7 +140,6 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         // 頂点バッファをバインド
         val posLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
         val uvLoc  = GLES20.glGetAttribLocation(backgroundProgram, "a_TexCoord")
-        val tiltLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Tilt")
 
         quadBuffer.position(0)
         GLES20.glVertexAttribPointer(posLoc, 2, GLES20.GL_FLOAT, false, VERTEX_STRIDE, quadBuffer)
@@ -139,16 +154,18 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, backgroundTextureId)
         GLES20.glUniform1i(GLES20.glGetUniformLocation(backgroundProgram, "u_Texture"), 0)
 
-        // シェーダーの u_Tilt に現在の傾きを渡す
-        if (tiltLoc >= 0) {
-            GLES20.glUniform2f(tiltLoc, tiltX, tiltY)
+        // キャッシュされた Location (メンバ変数) を使ってシェーダーに値を渡す
+        if (uTiltLocation >= 0) {
+            GLES20.glUniform2f(uTiltLocation, tiltX, tiltY)
         }
 
-        // --- u_Time for water ripple/caustics ---
-        val timeLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Time")
-        if (timeLoc >= 0) {
+        if (uTimeLocation >= 0) {
             val elapsed = (SystemClock.elapsedRealtime() - rendererStartMs) / 1000f
-            GLES20.glUniform1f(timeLoc, elapsed)
+            GLES20.glUniform1f(uTimeLocation, elapsed)
+        }
+
+        if (uWaveIntensityLocation >= 0) {
+            GLES20.glUniform1f(uWaveIntensityLocation, currentWaveIntensity)
         }
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
@@ -239,10 +256,20 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             Log.e(TAG, "Shader program build failed for $theme!")
         }
 
+        // ▼ 追加: シェーダー再構築後にLocationを取得してキャッシュ(保存)する ▼
+        uTimeLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_Time")
+        uTiltLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_Tilt")
+        uWaveIntensityLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_WaveIntensity")
+
         backgroundTextureId = TextureHelper.loadTexture(context, bgTextureRes)
         if (backgroundTextureId == 0) {
             Log.e(TAG, "Background texture load failed for $theme!")
         }
+    }
+
+    fun addWaveMomentum(momentum: Float) {
+        // 動きの勢いを足す（最大 3.0f まで）
+        targetWaveIntensity = (targetWaveIntensity + momentum * 0.5f).coerceAtMost(3.0f)
     }
 
     /**
