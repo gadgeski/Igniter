@@ -29,6 +29,9 @@ Igniter/
 │       │   │               │   └── TextureHelper.kt
 │       │   │               ├── renderer
 │       │   │               │   └── IgniterRenderer.kt
+│       │   │               ├── settings
+│       │   │               │   ├── SettingsActivity.kt
+│       │   │               │   └── Theme.kt
 │       │   │               └── ui
 │       │   │                   └── theme
 │       │   │                       ├── Color.kt
@@ -65,9 +68,11 @@ Igniter/
 │       │       │   ├── ic_launcher_foreground.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── raw
-│       │       │   ├── background_fragment_shader.glsl
 │       │       │   ├── background_vertex_shader.glsl
-│       │       │   ├── ripple_fragment_shader.glsl
+│       │       │   ├── bg_beach_fragment_shader.glsl
+│       │       │   ├── bg_cyberpunk_fragment_shader.glsl
+│       │       │   ├── ripple_beach_fragment_shader.glsl
+│       │       │   ├── ripple_cyberpunk_fragment_shader.glsl
 │       │       │   └── ripple_vertex_shader.glsl
 │       │       ├── values
 │       │       │   ├── colors.xml
@@ -95,5 +100,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-36 directories, 59 files
+37 directories, 63 files
 ```
