@@ -160,8 +160,12 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
 
         if (uTimeLocation >= 0) {
-            val elapsed = (SystemClock.elapsedRealtime() - rendererStartMs) / 1000f
-            GLES20.glUniform1f(uTimeLocation, elapsed)
+            // 精度落ち（17分フリーズ問題）を防ぐため、時間を一定周期でループさせる
+            // Math.PI * 1000 (約3141秒 = 約52分) ごとにリセットすることで、
+            // sin/cos の周期 (2π) と完全に一致させ、視覚的なカクつきをゼロにする
+            val rawElapsed = (SystemClock.elapsedRealtime() - rendererStartMs) / 1000.0
+            val safeElapsed = (rawElapsed % (Math.PI * 1000.0)).toFloat()
+            GLES20.glUniform1f(uTimeLocation, safeElapsed)
         }
 
         if (uWaveIntensityLocation >= 0) {
