@@ -25,7 +25,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         private const val TAG = "IgniterRenderer"
 
         // フルスクリーンクワッドの頂点定義 (NDC座標, UV付き)
-        // [X, Y, U, V]  ×  4頂点 (2トライアングルのトライアングルストリップ)
+        // [X, Y, U, V] × 4頂点 (2トライアングルのトライアングルストリップ)
         private val FULLSCREEN_QUAD = floatArrayOf(
             -1f,  1f,  0f, 0f,  // 左上
             -1f, -1f,  0f, 1f,  // 左下
@@ -33,19 +33,37 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             1f, -1f,  1f, 1f   // 右下
         )
 
-        private const val COORDS_PER_VERTEX = 4          // X,Y,U,V
-        private const val VERTEX_STRIDE     = COORDS_PER_VERTEX * 4 // 4 bytes/float
-        private const val RIPPLE_DURATION   = 2.0f        // 秒
+        private const val COORDS_PER_VERTEX = 4
+        private const val VERTEX_STRIDE = COORDS_PER_VERTEX * 4
+        private const val RIPPLE_DURATION = 2.0f
+
+        // 波の基本値は 0 にする
+        private const val BASE_WAVE_INTENSITY = 0.0f
+        private const val MAX_WAVE_INTENSITY = 3.0f
+
+        // これ未満なら「静止」とみなして shader 側の水面計算を止める
+        private const val WATER_MOTION_THRESHOLD = 0.02f
     }
 
-    // --- 既存の変数たち ---
-    private var uTimeLocation = 0
-    private var uTiltLocation = 0
+    // --- 背景シェーダー location キャッシュ ---
+    private var uTimeLocation = -1
+    private var uTiltLocation = -1
+    private var uWaveIntensityLocation = -1
+    private var uEnableWaterMotionLocation = -1
+    private var bgPosLoc = -1
+    private var bgUvLoc = -1
+    private var bgTextureLoc = -1
 
-    // ▼▼▼ 波の連動用変数 ▼▼▼
-    private var targetWaveIntensity = 0.2f
-    private var currentWaveIntensity = 0.2f
-    private var uWaveIntensityLocation = 0
+    // --- 波紋シェーダー location キャッシュ ---
+    private var ripplePosLoc = -1
+    private var rippleUvLoc = -1
+    private var rippleTouchLoc = -1
+    private var rippleTimeLoc = -1
+    private var rippleResolutionLoc = -1
+
+    // --- 波の連動用変数 ---
+    private var targetWaveIntensity = BASE_WAVE_INTENSITY
+    private var currentWaveIntensity = BASE_WAVE_INTENSITY
 
     // --- OpenGL リソース ---
     private var backgroundProgram = 0
@@ -54,10 +72,10 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     private var currentTheme = Theme.CYBERPUNK
 
-    // 描画開始時刻 (u_Time計算用)
+    // 描画開始時刻
     private var rendererStartMs = 0L
 
-    // 頂点バッファを宣言と同時に初期化（警告解消・安全性向上）
+    // 頂点バッファ
     private val quadBuffer: FloatBuffer = ByteBuffer.allocateDirect(FULLSCREEN_QUAD.size * 4)
         .order(ByteOrder.nativeOrder())
         .asFloatBuffer()
@@ -67,22 +85,28 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
 
     // --- 画面サイズ ---
-    private var screenWidth  = 1f
+    private var screenWidth = 1f
     private var screenHeight = 1f
 
     // --- 加速度（傾き）状態 ---
-    @Volatile private var tiltX = 0f
-    @Volatile private var tiltY = 0f
+    @Volatile
+    private var tiltX = 0f
 
-    // --- タッチ状態（スレッドセーフのため @Volatile）---
-    @Volatile private var touchNormX = 0.5f    // 正規化タッチ座標 X (0〜1)
-    @Volatile private var touchNormY = 0.5f    // 正規化タッチ座標 Y (0〜1, 上=0)
-    @Volatile private var touchStartMs = -1L   // タッチ開始時刻（ms）、-1=非アクティブ
-    @Volatile private var isRippleActive = false
+    @Volatile
+    private var tiltY = 0f
 
-    // -------------------------------------------------------------------------
-    // GLSurfaceView.Renderer コールバック
-    // -------------------------------------------------------------------------
+    // --- タッチ状態 ---
+    @Volatile
+    private var touchNormX = 0.5f
+
+    @Volatile
+    private var touchNormY = 0.5f
+
+    @Volatile
+    private var touchStartMs = -1L
+
+    @Volatile
+    private var isRippleActive = false
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         Log.d(TAG, "onSurfaceCreated")
@@ -90,34 +114,33 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
         GLES20.glClearColor(0f, 0f, 0f, 1f)
 
-        // ブレンド設定（波紋エフェクトはアルファブレンドで重ねる）
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
-
-        // Note: Shader and texture loading is now handled in setTheme()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         Log.d(TAG, "onSurfaceChanged: $width x $height")
         GLES20.glViewport(0, 0, width, height)
-        screenWidth  = width.toFloat()
+        screenWidth = width.toFloat()
         screenHeight = height.toFloat()
     }
 
     override fun onDrawFrame(gl: GL10?) {
-        // 1. 波の強さの減衰ロジック（毎フレーム静かな値に戻ろうとする）
-        // Math.max ではなく Kotlin の coerceAtLeast を使用して警告を解消
-        targetWaveIntensity = (targetWaveIntensity - 0.05f).coerceAtLeast(0.2f)
+        // 波の勢いを静かな値へ戻す
+        targetWaveIntensity = (targetWaveIntensity - 0.05f).coerceAtLeast(BASE_WAVE_INTENSITY)
 
-        // 現在の値をターゲットに向けて滑らかに補間
+        // 滑らかに補間
         currentWaveIntensity += (targetWaveIntensity - currentWaveIntensity) * 0.1f
+
+        // しきい値未満は明示的に 0 扱いにして静止へ寄せる
+        if (currentWaveIntensity < WATER_MOTION_THRESHOLD) {
+            currentWaveIntensity = 0f
+        }
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-        // 1. 背景テクスチャを描画
         drawBackground()
 
-        // 2. 波紋エフェクトを描画（アクティブな場合のみ）
         if (isRippleActive) {
             val elapsed = (SystemClock.elapsedRealtime() - touchStartMs) / 1000f
             if (elapsed <= RIPPLE_DURATION) {
@@ -128,41 +151,43 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // 描画処理
-    // -------------------------------------------------------------------------
-
     private fun drawBackground() {
         if (backgroundProgram == 0 || backgroundTextureId == 0) return
+        if (bgPosLoc < 0 || bgUvLoc < 0 || bgTextureLoc < 0) return
 
         GLES20.glUseProgram(backgroundProgram)
 
-        // 頂点バッファをバインド
-        val posLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
-        val uvLoc  = GLES20.glGetAttribLocation(backgroundProgram, "a_TexCoord")
-
         quadBuffer.position(0)
-        GLES20.glVertexAttribPointer(posLoc, 2, GLES20.GL_FLOAT, false, VERTEX_STRIDE, quadBuffer)
-        GLES20.glEnableVertexAttribArray(posLoc)
+        GLES20.glVertexAttribPointer(
+            bgPosLoc,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            VERTEX_STRIDE,
+            quadBuffer
+        )
+        GLES20.glEnableVertexAttribArray(bgPosLoc)
 
-        quadBuffer.position(2) // UVはX,Yの後に続く
-        GLES20.glVertexAttribPointer(uvLoc, 2, GLES20.GL_FLOAT, false, VERTEX_STRIDE, quadBuffer)
-        GLES20.glEnableVertexAttribArray(uvLoc)
+        quadBuffer.position(2)
+        GLES20.glVertexAttribPointer(
+            bgUvLoc,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            VERTEX_STRIDE,
+            quadBuffer
+        )
+        GLES20.glEnableVertexAttribArray(bgUvLoc)
 
-        // テクスチャをユニット0にバインド
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, backgroundTextureId)
-        GLES20.glUniform1i(GLES20.glGetUniformLocation(backgroundProgram, "u_Texture"), 0)
+        GLES20.glUniform1i(bgTextureLoc, 0)
 
-        // キャッシュされた Location (メンバ変数) を使ってシェーダーに値を渡す
         if (uTiltLocation >= 0) {
             GLES20.glUniform2f(uTiltLocation, tiltX, tiltY)
         }
 
         if (uTimeLocation >= 0) {
-            // 精度落ち（17分フリーズ問題）を防ぐため、時間を一定周期でループさせる
-            // Math.PI * 1000 (約3141秒 = 約52分) ごとにリセットすることで、
-            // sin/cos の周期 (2π) と完全に一致させ、視覚的なカクつきをゼロにする
             val rawElapsed = (SystemClock.elapsedRealtime() - rendererStartMs) / 1000.0
             val safeElapsed = (rawElapsed % (Math.PI * 1000.0)).toFloat()
             GLES20.glUniform1f(uTimeLocation, safeElapsed)
@@ -172,61 +197,73 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             GLES20.glUniform1f(uWaveIntensityLocation, currentWaveIntensity)
         }
 
+        if (uEnableWaterMotionLocation >= 0) {
+            val isWaterMotionEnabled = currentWaveIntensity > WATER_MOTION_THRESHOLD
+            GLES20.glUniform1f(
+                uEnableWaterMotionLocation,
+                if (isWaterMotionEnabled) 1f else 0f
+            )
+        }
+
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
-        GLES20.glDisableVertexAttribArray(posLoc)
-        GLES20.glDisableVertexAttribArray(uvLoc)
+        GLES20.glDisableVertexAttribArray(bgPosLoc)
+        GLES20.glDisableVertexAttribArray(bgUvLoc)
     }
 
     private fun drawRipple(elapsedSeconds: Float) {
         if (rippleProgram == 0) return
+        if (ripplePosLoc < 0 || rippleUvLoc < 0) return
 
         GLES20.glUseProgram(rippleProgram)
 
-        val posLoc = GLES20.glGetAttribLocation(rippleProgram, "a_Position")
-        val uvLoc  = GLES20.glGetAttribLocation(rippleProgram, "a_TexCoord")
-
         quadBuffer.position(0)
-        GLES20.glVertexAttribPointer(posLoc, 2, GLES20.GL_FLOAT, false, VERTEX_STRIDE, quadBuffer)
-        GLES20.glEnableVertexAttribArray(posLoc)
+        GLES20.glVertexAttribPointer(
+            ripplePosLoc,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            VERTEX_STRIDE,
+            quadBuffer
+        )
+        GLES20.glEnableVertexAttribArray(ripplePosLoc)
 
         quadBuffer.position(2)
-        GLES20.glVertexAttribPointer(uvLoc, 2, GLES20.GL_FLOAT, false, VERTEX_STRIDE, quadBuffer)
-        GLES20.glEnableVertexAttribArray(uvLoc)
+        GLES20.glVertexAttribPointer(
+            rippleUvLoc,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            VERTEX_STRIDE,
+            quadBuffer
+        )
+        GLES20.glEnableVertexAttribArray(rippleUvLoc)
 
-        // Uniform変数へ値を渡す
-        GLES20.glUniform2f(
-            GLES20.glGetUniformLocation(rippleProgram, "u_Touch"),
-            touchNormX, touchNormY
-        )
-        GLES20.glUniform1f(
-            GLES20.glGetUniformLocation(rippleProgram, "u_Time"),
-            elapsedSeconds
-        )
-        GLES20.glUniform2f(
-            GLES20.glGetUniformLocation(rippleProgram, "u_Resolution"),
-            screenWidth, screenHeight
-        )
+        if (rippleTouchLoc >= 0) {
+            GLES20.glUniform2f(rippleTouchLoc, touchNormX, touchNormY)
+        }
+        if (rippleTimeLoc >= 0) {
+            GLES20.glUniform1f(rippleTimeLoc, elapsedSeconds)
+        }
+        if (rippleResolutionLoc >= 0) {
+            GLES20.glUniform2f(rippleResolutionLoc, screenWidth, screenHeight)
+        }
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
-        GLES20.glDisableVertexAttribArray(posLoc)
-        GLES20.glDisableVertexAttribArray(uvLoc)
+        GLES20.glDisableVertexAttribArray(ripplePosLoc)
+        GLES20.glDisableVertexAttribArray(rippleUvLoc)
     }
-
-    // -------------------------------------------------------------------------
-    // 外部から呼ばれるAPI
-    // -------------------------------------------------------------------------
 
     /**
      * テーマを変更する。必ずGLスレッドから呼ぶこと。
      */
     fun setTheme(theme: Theme) {
-        if (currentTheme == theme && backgroundProgram != 0) return // Already loaded
+        if (currentTheme == theme && backgroundProgram != 0) return
+
         Log.d(TAG, "setTheme: changing theme to $theme")
         currentTheme = theme
 
-        // 既存のリソースをいったん解放する
         release()
 
         val bgTextureRes: Int
@@ -239,6 +276,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
                 bgFragmentStr = R.raw.bg_cyberpunk_fragment_shader
                 rippleFragmentStr = R.raw.ripple_cyberpunk_fragment_shader
             }
+
             Theme.SUMMER_BEACH -> {
                 bgTextureRes = R.drawable.bg_summer_beach
                 bgFragmentStr = R.raw.bg_beach_fragment_shader
@@ -256,65 +294,85 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             R.raw.ripple_vertex_shader,
             rippleFragmentStr
         )
+
         if (backgroundProgram == 0 || rippleProgram == 0) {
             Log.e(TAG, "Shader program build failed for $theme!")
         }
 
-        // ▼ 追加: シェーダー再構築後にLocationを取得してキャッシュ(保存)する ▼
+        // 背景シェーダー
         uTimeLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_Time")
         uTiltLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_Tilt")
         uWaveIntensityLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_WaveIntensity")
+        uEnableWaterMotionLocation =
+            GLES20.glGetUniformLocation(backgroundProgram, "u_EnableWaterMotion")
+        bgPosLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
+        bgUvLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_TexCoord")
+        bgTextureLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Texture")
+
+        // 波紋シェーダー
+        ripplePosLoc = GLES20.glGetAttribLocation(rippleProgram, "a_Position")
+        rippleUvLoc = GLES20.glGetAttribLocation(rippleProgram, "a_TexCoord")
+        rippleTouchLoc = GLES20.glGetUniformLocation(rippleProgram, "u_Touch")
+        rippleTimeLoc = GLES20.glGetUniformLocation(rippleProgram, "u_Time")
+        rippleResolutionLoc = GLES20.glGetUniformLocation(rippleProgram, "u_Resolution")
 
         backgroundTextureId = TextureHelper.loadTexture(context, bgTextureRes)
         if (backgroundTextureId == 0) {
             Log.e(TAG, "Background texture load failed for $theme!")
         }
+
+        // テーマ変更直後に前テーマの残り勢いを持ち越さない
+        targetWaveIntensity = BASE_WAVE_INTENSITY
+        currentWaveIntensity = BASE_WAVE_INTENSITY
     }
 
     fun addWaveMomentum(momentum: Float) {
-        // 動きの勢いを足す（最大 3.0f まで）
-        targetWaveIntensity = (targetWaveIntensity + momentum * 0.5f).coerceAtMost(3.0f)
+        targetWaveIntensity =
+            (targetWaveIntensity + momentum * 0.5f).coerceAtMost(MAX_WAVE_INTENSITY)
     }
 
-    /**
-     * デバイスの傾き（加速度）センサーの値を更新する。
-     */
     fun updateTilt(x: Float, y: Float) {
         tiltX = x
         tiltY = y
     }
 
-    /**
-     * タッチイベントを受け取り、波紋アニメーションを（再）開始する。
-     * メインスレッドから呼ばれるので @Volatile で保護。
-     *
-     * @param x タッチX座標（ピクセル）
-     * @param y タッチY座標（ピクセル）
-     */
     fun updateTouch(x: Float, y: Float) {
-        // 正規化 (0〜1へ変換。Y軸: 上が0になるよう反転)
         touchNormX = x / screenWidth
-        touchNormY = y / screenHeight  // GLSLのv_TexCoordと同じ向きのためそのまま
+        touchNormY = y / screenHeight
 
-        // 前の波紋をキャンセルして新しい開始時刻をセット
         touchStartMs = SystemClock.elapsedRealtime()
         isRippleActive = true
     }
 
-    /**
-     * サーフェス破棄時にOpenGLリソースを解放する。
-     * GL スレッドから呼ぶこと。
-     */
     fun release() {
         TextureHelper.deleteTexture(backgroundTextureId)
         backgroundTextureId = 0
+
         if (backgroundProgram != 0) {
             GLES20.glDeleteProgram(backgroundProgram)
             backgroundProgram = 0
         }
+
         if (rippleProgram != 0) {
             GLES20.glDeleteProgram(rippleProgram)
             rippleProgram = 0
         }
+
+        uTimeLocation = -1
+        uTiltLocation = -1
+        uWaveIntensityLocation = -1
+        uEnableWaterMotionLocation = -1
+        bgPosLoc = -1
+        bgUvLoc = -1
+        bgTextureLoc = -1
+
+        ripplePosLoc = -1
+        rippleUvLoc = -1
+        rippleTouchLoc = -1
+        rippleTimeLoc = -1
+        rippleResolutionLoc = -1
+
+        targetWaveIntensity = BASE_WAVE_INTENSITY
+        currentWaveIntensity = BASE_WAVE_INTENSITY
     }
 }

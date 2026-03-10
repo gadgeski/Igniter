@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.SystemClock
 import android.service.wallpaper.WallpaperService
 import android.util.Log
 import android.view.MotionEvent
@@ -30,8 +31,24 @@ class IgniterWallpaperService : WallpaperService() {
 
     companion object {
         private const val TAG = "IgniterWallpaperService"
-        private const val TARGET_FPS_MS = 16L  // ~60fps
+
+        // アクティブ時は 60fps 相当
+        private const val ACTIVE_FRAME_MS = 16L
+
+        // 何も起きていない通常時は 30fps 相当
+        private const val IDLE_FRAME_MS = 33L
+
+        // タッチ・センサー変化があってからこの時間は高fps維持
+        private const val ACTIVE_MODE_KEEP_MS = 1_500L
+
+        // 傾きのローパスフィルタ係数
         private const val ALPHA = 0.1f
+
+        // 波の勢いを足す最低しきい値
+        private const val WAVE_TRIGGER_THRESHOLD = 0.5f
+
+        // フレーム間で溜め込む勢いの上限
+        private const val MAX_PENDING_WAVE_MOMENTUM = 6.0f
     }
 
     override fun onCreate() {
@@ -49,65 +66,88 @@ class IgniterWallpaperService : WallpaperService() {
         return IgniterEngine()
     }
 
-    // =========================================================================
-    // Engine
-    // =========================================================================
-
     inner class IgniterEngine : Engine(), SensorEventListener {
 
         private val renderer = IgniterRenderer(applicationContext)
         private val eglHelper = EglHelper()
 
-        // 【最重要】OpenGL専用の単一スレッドを作成（EGLコンテキストを維持するため）
+        // OpenGL専用単一スレッド
         private val glExecutor = Executors.newSingleThreadExecutor()
         private val glDispatcher = glExecutor.asCoroutineDispatcher()
-
-        // すべてのGL処理をこのスコープ（専用スレッド）で実行する
         private val scope = CoroutineScope(SupervisorJob() + glDispatcher)
+
         private var drawJob: Job? = null
 
-        // サーフェスの準備完了フラグ
-        @Volatile private var surfaceReady = false
+        @Volatile
+        private var surfaceReady = false
+
+        @Volatile
+        private var engineVisible = false
 
         // センサー関連
         private var sensorManager: SensorManager? = null
         private var accelerometer: Sensor? = null
-        
-        // ローパスフィルタ用（0.0: 無反応 〜 1.0: そのまま）
+
+        // ローパスフィルタ済み傾き
         private var smoothedTiltX = 0f
         private var smoothedTiltY = 0f
 
-        // 追加: 動きの検知用
+        // 前回センサー値
         private var lastAccelX = 0f
         private var lastAccelY = 0f
         private var isFirstSensorEvent = true
 
+        // 入力イベントの反映は GL スレッド側に寄せる
+        @Volatile
+        private var pendingTiltX = 0f
+
+        @Volatile
+        private var pendingTiltY = 0f
+
+        private val pendingStateLock = Any()
+        private var pendingTouchX = 0f
+        private var pendingTouchY = 0f
+        private var hasPendingTouch = false
+        private var pendingWaveMomentum = 0f
+
+        @Volatile
+        private var lastInteractionMs = 0L
+
         // テーマ監視
         private lateinit var prefs: SharedPreferences
-        private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-            if (key == "selected_theme") {
-                val themeName = sharedPreferences.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
-                val theme = try { Theme.valueOf(themeName) } catch (_: Exception) { Theme.CYBERPUNK }
-                Log.d(TAG, "Theme changed to $theme, scheduling reload on GL thread")
-                // 安全にGLスレッドでテーマを適用する
-                scope.launch {
-                    if (surfaceReady && eglHelper.isReady) {
-                        renderer.setTheme(theme)
+        private val prefsListener =
+            SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+                if (key == "selected_theme") {
+                    val themeName = sharedPreferences.getString(
+                        "selected_theme",
+                        Theme.CYBERPUNK.name
+                    ) ?: Theme.CYBERPUNK.name
+
+                    val theme = try {
+                        Theme.valueOf(themeName)
+                    } catch (_: Exception) {
+                        Theme.CYBERPUNK
+                    }
+
+                    Log.d(TAG, "Theme changed to $theme, scheduling reload on GL thread")
+                    scope.launch {
+                        if (surfaceReady && eglHelper.isReady) {
+                            renderer.setTheme(theme)
+                            lastInteractionMs = SystemClock.elapsedRealtime()
+                        }
                     }
                 }
             }
-        }
 
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // ライフサイクル
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
 
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
             setTouchEventsEnabled(true)
             Log.d(TAG, "Engine.onCreate")
 
-            // Context. を削除して冗長な修飾名を解消
             prefs = applicationContext.getSharedPreferences("igniter_prefs", MODE_PRIVATE)
             prefs.registerOnSharedPreferenceChangeListener(prefsListener)
 
@@ -119,7 +159,6 @@ class IgniterWallpaperService : WallpaperService() {
             super.onSurfaceCreated(holder)
             Log.d(TAG, "Engine.onSurfaceCreated")
 
-            // EGL の初期化と OpenGL リソースのセットアップは GL スレッドで行う
             scope.launch {
                 if (holder == null) return@launch
 
@@ -129,17 +168,31 @@ class IgniterWallpaperService : WallpaperService() {
                     return@launch
                 }
 
-                // GL コンテキストがカレントになっている前提で Renderer を初期化し、初期テーマをロード
                 renderer.onSurfaceCreated(null, null)
-                val themeName = prefs.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
-                val initialTheme = try { Theme.valueOf(themeName) } catch(_: Exception) { Theme.CYBERPUNK }
+
+                val themeName = prefs.getString(
+                    "selected_theme",
+                    Theme.CYBERPUNK.name
+                ) ?: Theme.CYBERPUNK.name
+
+                val initialTheme = try {
+                    Theme.valueOf(themeName)
+                } catch (_: Exception) {
+                    Theme.CYBERPUNK
+                }
+
                 renderer.setTheme(initialTheme)
 
                 val size = holder.surfaceFrame
                 renderer.onSurfaceChanged(null, size.width(), size.height())
 
                 surfaceReady = true
+                lastInteractionMs = SystemClock.elapsedRealtime()
                 Log.d(TAG, "GL surface ready")
+
+                if (engineVisible) {
+                    startDrawingLoop()
+                }
             }
         }
 
@@ -153,8 +206,9 @@ class IgniterWallpaperService : WallpaperService() {
             Log.d(TAG, "Engine.onSurfaceChanged: $width x $height")
 
             scope.launch {
-                if (surfaceReady) {
+                if (surfaceReady && eglHelper.isReady) {
                     renderer.onSurfaceChanged(null, width, height)
+                    lastInteractionMs = SystemClock.elapsedRealtime()
                 }
             }
         }
@@ -162,9 +216,11 @@ class IgniterWallpaperService : WallpaperService() {
         override fun onSurfaceDestroyed(holder: SurfaceHolder?) {
             super.onSurfaceDestroyed(holder)
             Log.d(TAG, "Engine.onSurfaceDestroyed")
-            surfaceReady = false
 
-            // 【修正】非同期ではなく、同期(runBlocking)で確実にGLスレッド上でリソースを解放する
+            surfaceReady = false
+            stopDrawingLoop()
+            clearPendingState()
+
             runBlocking(glDispatcher) {
                 renderer.release()
                 eglHelper.destroySurface()
@@ -173,10 +229,21 @@ class IgniterWallpaperService : WallpaperService() {
 
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
+            engineVisible = visible
             Log.d(TAG, "Engine.onVisibilityChanged: visible=$visible")
+
             if (visible) {
-                sensorManager?.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME)
-                startDrawingLoop()
+                resetSensorTracking()
+                sensorManager?.registerListener(
+                    this,
+                    accelerometer,
+                    SensorManager.SENSOR_DELAY_GAME
+                )
+                lastInteractionMs = SystemClock.elapsedRealtime()
+
+                if (surfaceReady && eglHelper.isReady) {
+                    startDrawingLoop()
+                }
             } else {
                 sensorManager?.unregisterListener(this)
                 stopDrawingLoop()
@@ -186,89 +253,112 @@ class IgniterWallpaperService : WallpaperService() {
         override fun onDestroy() {
             super.onDestroy()
             Log.d(TAG, "Engine.onDestroy")
+
             prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
             sensorManager?.unregisterListener(this)
-            stopDrawingLoop()
 
-            // エンジン破棄時にEGLコンテキストも完全に解放
+            stopDrawingLoop()
+            surfaceReady = false
+            clearPendingState()
+
             runBlocking(glDispatcher) {
+                renderer.release()
                 eglHelper.release()
             }
 
-            // 全てが終わってからスレッドプールを閉じる
             scope.cancel()
             glExecutor.shutdown()
         }
 
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // タッチイベント
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
 
         override fun onTouchEvent(event: MotionEvent?) {
             super.onTouchEvent(event)
-            event?.let {
-                when (it.action) {
-                    MotionEvent.ACTION_DOWN,
-                    MotionEvent.ACTION_MOVE -> renderer.updateTouch(it.x, it.y)
+
+            event ?: return
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_MOVE -> {
+                    synchronized(pendingStateLock) {
+                        pendingTouchX = event.x
+                        pendingTouchY = event.y
+                        hasPendingTouch = true
+                    }
+                    lastInteractionMs = SystemClock.elapsedRealtime()
                 }
             }
         }
 
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // センサーイベント
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
 
         override fun onSensorChanged(event: SensorEvent?) {
-            if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-                val x = event.values[0]
-                val y = event.values[1]
+            if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
 
-                // 1. 傾き（パララックス用）のローパスフィルタ
-                smoothedTiltX = ALPHA * x + (1 - ALPHA) * smoothedTiltX
-                smoothedTiltY = ALPHA * y + (1 - ALPHA) * smoothedTiltY
-                renderer.updateTilt(smoothedTiltX, smoothedTiltY)
+            val x = event.values[0]
+            val y = event.values[1]
 
-                // 2. 動きの大きさ（波のうねり用）を計算してRendererに送る
-                if (isFirstSensorEvent) {
-                    lastAccelX = x
-                    lastAccelY = y
-                    isFirstSensorEvent = false
-                    return
-                }
+            // 1. 傾き（パララックス用）のローパスフィルタ
+            smoothedTiltX = ALPHA * x + (1f - ALPHA) * smoothedTiltX
+            smoothedTiltY = ALPHA * y + (1f - ALPHA) * smoothedTiltY
 
-                val deltaX = x - lastAccelX
-                val deltaY = y - lastAccelY
-                // 三平方の定理で動きのベクトル量を計算 (Kotlinのモダンな関数 hypot を使用)
-                val movement = hypot(deltaX, deltaY)
+            pendingTiltX = smoothedTiltX
+            pendingTiltY = smoothedTiltY
 
+            // 2. 動きの大きさ（波のうねり用）
+            if (isFirstSensorEvent) {
                 lastAccelX = x
                 lastAccelY = y
+                isFirstSensorEvent = false
+                return
+            }
 
-                // ノイズを省き、ある程度動いた時だけ波を発生させる
-                if (movement > 0.5f) {
-                    renderer.addWaveMomentum(movement)
+            val deltaX = x - lastAccelX
+            val deltaY = y - lastAccelY
+            val movement = hypot(deltaX, deltaY)
+
+            lastAccelX = x
+            lastAccelY = y
+
+            if (movement > WAVE_TRIGGER_THRESHOLD) {
+                synchronized(pendingStateLock) {
+                    pendingWaveMomentum =
+                        (pendingWaveMomentum + movement).coerceAtMost(MAX_PENDING_WAVE_MOMENTUM)
                 }
+                lastInteractionMs = SystemClock.elapsedRealtime()
             }
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-            // Use it if needed
+            // 必要になったら使う
         }
 
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // 描画ループ
-        // -------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
 
         private fun startDrawingLoop() {
             if (drawJob?.isActive == true) return
+
             Log.d(TAG, "Draw loop started")
 
             drawJob = scope.launch {
                 while (isActive) {
-                    if (surfaceReady && eglHelper.isReady) {
+                    val frameStartMs = SystemClock.elapsedRealtime()
+
+                    if (engineVisible && surfaceReady && eglHelper.isReady) {
+                        applyPendingRendererUpdates()
                         drawFrame()
                     }
-                    delay(TARGET_FPS_MS)
+
+                    val targetFrameMs = currentTargetFrameMs(frameStartMs)
+                    val frameElapsedMs = SystemClock.elapsedRealtime() - frameStartMs
+                    val sleepMs = (targetFrameMs - frameElapsedMs).coerceAtLeast(0L)
+                    delay(sleepMs)
                 }
             }
         }
@@ -279,12 +369,72 @@ class IgniterWallpaperService : WallpaperService() {
             Log.d(TAG, "Draw loop stopped")
         }
 
+        private fun currentTargetFrameMs(nowMs: Long): Long {
+            val recentlyActive = (nowMs - lastInteractionMs) <= ACTIVE_MODE_KEEP_MS
+            return if (recentlyActive) ACTIVE_FRAME_MS else IDLE_FRAME_MS
+        }
+
+        private fun applyPendingRendererUpdates() {
+            renderer.updateTilt(pendingTiltX, pendingTiltY)
+
+            var localHasTouch = false
+            var localTouchX = 0f
+            var localTouchY = 0f
+            var localWaveMomentum = 0f
+
+            synchronized(pendingStateLock) {
+                if (hasPendingTouch) {
+                    localHasTouch = true
+                    localTouchX = pendingTouchX
+                    localTouchY = pendingTouchY
+                    hasPendingTouch = false
+                }
+
+                if (pendingWaveMomentum > 0f) {
+                    localWaveMomentum = pendingWaveMomentum
+                    pendingWaveMomentum = 0f
+                }
+            }
+
+            if (localHasTouch) {
+                renderer.updateTouch(localTouchX, localTouchY)
+            }
+
+            if (localWaveMomentum > 0f) {
+                renderer.addWaveMomentum(localWaveMomentum)
+            }
+        }
+
         private fun drawFrame() {
             try {
                 renderer.onDrawFrame(null)
                 eglHelper.swapBuffers()
             } catch (e: Exception) {
                 Log.e(TAG, "Error in drawFrame", e)
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // 補助メソッド
+        // ---------------------------------------------------------------------
+
+        private fun resetSensorTracking() {
+            smoothedTiltX = 0f
+            smoothedTiltY = 0f
+            lastAccelX = 0f
+            lastAccelY = 0f
+            isFirstSensorEvent = true
+        }
+
+        private fun clearPendingState() {
+            pendingTiltX = 0f
+            pendingTiltY = 0f
+
+            synchronized(pendingStateLock) {
+                pendingTouchX = 0f
+                pendingTouchY = 0f
+                hasPendingTouch = false
+                pendingWaveMomentum = 0f
             }
         }
     }
