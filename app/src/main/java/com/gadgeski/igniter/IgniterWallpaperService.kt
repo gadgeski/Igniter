@@ -32,14 +32,20 @@ class IgniterWallpaperService : WallpaperService() {
     companion object {
         private const val TAG = "IgniterWallpaperService"
 
-        // アクティブ時は 60fps 相当
-        private const val ACTIVE_FRAME_MS = 16L
+        // 高負荷が必要な直後
+        private const val ACTIVE_FRAME_MS = 16L      // 約60fps
 
-        // 何も起きていない通常時は 30fps 相当
-        private const val IDLE_FRAME_MS = 33L
+        // 少し落ち着いた状態
+        private const val IDLE_FRAME_MS = 33L        // 約30fps
 
-        // タッチ・センサー変化があってからこの時間は高fps維持
-        private const val ACTIVE_MODE_KEEP_MS = 1_500L
+        // しばらく静止している状態
+        private const val DEEP_IDLE_FRAME_MS = 66L   // 約15fps
+
+        // タッチ・大きな動きの直後は高fpsを維持
+        private const val ACTIVE_MODE_KEEP_MS = 2_200L
+
+        // そこからさらに静かな状態が続いたら deep idle へ
+        private const val IDLE_MODE_KEEP_MS = 8_000L
 
         // 傾きのローパスフィルタ係数
         private const val ALPHA = 0.1f
@@ -97,7 +103,7 @@ class IgniterWallpaperService : WallpaperService() {
         private var lastAccelY = 0f
         private var isFirstSensorEvent = true
 
-        // 入力イベントの反映は GL スレッド側に寄せる
+        // Renderer 反映待ち状態
         @Volatile
         private var pendingTiltX = 0f
 
@@ -112,6 +118,9 @@ class IgniterWallpaperService : WallpaperService() {
 
         @Volatile
         private var lastInteractionMs = 0L
+
+        // 検証用: fpsモード切り替えログ
+        private var lastLoggedFrameMs = -1L
 
         // テーマ監視
         private lateinit var prefs: SharedPreferences
@@ -138,10 +147,6 @@ class IgniterWallpaperService : WallpaperService() {
                     }
                 }
             }
-
-        // ---------------------------------------------------------------------
-        // ライフサイクル
-        // ---------------------------------------------------------------------
 
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
@@ -188,6 +193,7 @@ class IgniterWallpaperService : WallpaperService() {
 
                 surfaceReady = true
                 lastInteractionMs = SystemClock.elapsedRealtime()
+                lastLoggedFrameMs = -1L
                 Log.d(TAG, "GL surface ready")
 
                 if (engineVisible) {
@@ -240,6 +246,7 @@ class IgniterWallpaperService : WallpaperService() {
                     SensorManager.SENSOR_DELAY_GAME
                 )
                 lastInteractionMs = SystemClock.elapsedRealtime()
+                lastLoggedFrameMs = -1L
 
                 if (surfaceReady && eglHelper.isReady) {
                     startDrawingLoop()
@@ -270,10 +277,6 @@ class IgniterWallpaperService : WallpaperService() {
             glExecutor.shutdown()
         }
 
-        // ---------------------------------------------------------------------
-        // タッチイベント
-        // ---------------------------------------------------------------------
-
         override fun onTouchEvent(event: MotionEvent?) {
             super.onTouchEvent(event)
 
@@ -291,10 +294,6 @@ class IgniterWallpaperService : WallpaperService() {
                 }
             }
         }
-
-        // ---------------------------------------------------------------------
-        // センサーイベント
-        // ---------------------------------------------------------------------
 
         override fun onSensorChanged(event: SensorEvent?) {
             if (event?.sensor?.type != Sensor.TYPE_ACCELEROMETER) return
@@ -337,10 +336,6 @@ class IgniterWallpaperService : WallpaperService() {
             // 必要になったら使う
         }
 
-        // ---------------------------------------------------------------------
-        // 描画ループ
-        // ---------------------------------------------------------------------
-
         private fun startDrawingLoop() {
             if (drawJob?.isActive == true) return
 
@@ -356,6 +351,8 @@ class IgniterWallpaperService : WallpaperService() {
                     }
 
                     val targetFrameMs = currentTargetFrameMs(frameStartMs)
+                    logFrameModeIfNeeded(targetFrameMs, frameStartMs)
+
                     val frameElapsedMs = SystemClock.elapsedRealtime() - frameStartMs
                     val sleepMs = (targetFrameMs - frameElapsedMs).coerceAtLeast(0L)
                     delay(sleepMs)
@@ -366,12 +363,37 @@ class IgniterWallpaperService : WallpaperService() {
         private fun stopDrawingLoop() {
             drawJob?.cancel()
             drawJob = null
+            lastLoggedFrameMs = -1L
             Log.d(TAG, "Draw loop stopped")
         }
 
         private fun currentTargetFrameMs(nowMs: Long): Long {
-            val recentlyActive = (nowMs - lastInteractionMs) <= ACTIVE_MODE_KEEP_MS
-            return if (recentlyActive) ACTIVE_FRAME_MS else IDLE_FRAME_MS
+            val quietMs = nowMs - lastInteractionMs
+
+            return when {
+                quietMs <= ACTIVE_MODE_KEEP_MS -> ACTIVE_FRAME_MS
+                quietMs <= IDLE_MODE_KEEP_MS -> IDLE_FRAME_MS
+                else -> DEEP_IDLE_FRAME_MS
+            }
+        }
+
+        private fun logFrameModeIfNeeded(targetFrameMs: Long, nowMs: Long) {
+            if (targetFrameMs == lastLoggedFrameMs) return
+
+            lastLoggedFrameMs = targetFrameMs
+
+            val mode = when (targetFrameMs) {
+                ACTIVE_FRAME_MS -> "ACTIVE_60FPS"
+                IDLE_FRAME_MS -> "IDLE_30FPS"
+                DEEP_IDLE_FRAME_MS -> "DEEP_IDLE_15FPS"
+                else -> "UNKNOWN"
+            }
+
+            val quietMs = nowMs - lastInteractionMs
+            Log.d(
+                TAG,
+                "Frame mode changed: $mode (target=${targetFrameMs}ms, quietMs=${quietMs}ms)"
+            )
         }
 
         private fun applyPendingRendererUpdates() {
@@ -413,10 +435,6 @@ class IgniterWallpaperService : WallpaperService() {
                 Log.e(TAG, "Error in drawFrame", e)
             }
         }
-
-        // ---------------------------------------------------------------------
-        // 補助メソッド
-        // ---------------------------------------------------------------------
 
         private fun resetSensorTracking() {
             smoothedTiltX = 0f
