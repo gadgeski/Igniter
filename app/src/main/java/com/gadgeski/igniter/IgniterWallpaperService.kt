@@ -12,7 +12,7 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 import com.gadgeski.igniter.opengl.EglHelper
 import com.gadgeski.igniter.renderer.IgniterRenderer
-import com.gadgeski.igniter.settings.Theme
+import com.gadgeski.igniter.settings.WallpaperTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -136,13 +136,13 @@ class IgniterWallpaperService : WallpaperService() {
                 if (key == "selected_theme") {
                     val themeName = sharedPreferences.getString(
                         "selected_theme",
-                        Theme.CYBERPUNK.name
-                    ) ?: Theme.CYBERPUNK.name
+                        WallpaperTheme.CYBERPUNK.name
+                    ) ?: WallpaperTheme.CYBERPUNK.name
 
                     val theme = try {
-                        Theme.valueOf(themeName)
+                        WallpaperTheme.valueOf(themeName)
                     } catch (_: Exception) {
-                        Theme.CYBERPUNK
+                        WallpaperTheme.CYBERPUNK
                     }
 
                     Log.d(TAG, "Theme changed to $theme, scheduling reload on GL thread")
@@ -184,13 +184,13 @@ class IgniterWallpaperService : WallpaperService() {
 
                 val themeName = prefs.getString(
                     "selected_theme",
-                    Theme.CYBERPUNK.name
-                ) ?: Theme.CYBERPUNK.name
+                    WallpaperTheme.CYBERPUNK.name
+                ) ?: WallpaperTheme.CYBERPUNK.name
 
                 val initialTheme = try {
-                    Theme.valueOf(themeName)
+                    WallpaperTheme.valueOf(themeName)
                 } catch (_: Exception) {
-                    Theme.CYBERPUNK
+                    WallpaperTheme.CYBERPUNK
                 }
 
                 renderer.setTheme(initialTheme)

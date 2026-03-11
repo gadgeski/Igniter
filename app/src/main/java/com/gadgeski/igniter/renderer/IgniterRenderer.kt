@@ -8,7 +8,7 @@ import android.util.Log
 import com.gadgeski.igniter.R
 import com.gadgeski.igniter.opengl.ShaderHelper
 import com.gadgeski.igniter.opengl.TextureHelper
-import com.gadgeski.igniter.settings.Theme
+import com.gadgeski.igniter.settings.WallpaperTheme
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -62,7 +62,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var rippleProgram = 0
     private var backgroundTextureId = 0
 
-    private var currentTheme = Theme.CYBERPUNK
+    private var currentTheme = WallpaperTheme.CYBERPUNK
     private var rendererStartMs = 0L
 
     private val quadBuffer: FloatBuffer = ByteBuffer.allocateDirect(FULLSCREEN_QUAD.size * 4)
@@ -266,7 +266,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glDisableVertexAttribArray(rippleUvLoc)
     }
 
-    fun setTheme(theme: Theme) {
+    fun setTheme(theme: WallpaperTheme) {
         if (currentTheme == theme && backgroundProgram != 0) return
 
         Log.d(TAG, "setTheme: changing theme to $theme")
@@ -279,13 +279,13 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         val rippleFragmentStr: Int
 
         when (theme) {
-            Theme.CYBERPUNK -> {
+            WallpaperTheme.CYBERPUNK -> {
                 bgTextureRes = R.drawable.igniter_bg
                 bgFragmentStr = R.raw.bg_cyberpunk_fragment_shader
                 rippleFragmentStr = R.raw.ripple_cyberpunk_fragment_shader
             }
 
-            Theme.SUMMER_BEACH -> {
+            WallpaperTheme.SUMMER_BEACH -> {
                 bgTextureRes = R.drawable.bg_summer_beach
                 bgFragmentStr = R.raw.bg_beach_fragment_shader
                 rippleFragmentStr = R.raw.ripple_beach_fragment_shader

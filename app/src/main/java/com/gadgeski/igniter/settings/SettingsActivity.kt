@@ -77,8 +77,8 @@ class SettingsActivity : ComponentActivity() {
 fun SettingsScreen(modifier: Modifier = Modifier, prefs: SharedPreferences) {
     var selectedTheme by remember {
         mutableStateOf(
-            Theme.valueOf(
-                prefs.getString("selected_theme", Theme.CYBERPUNK.name) ?: Theme.CYBERPUNK.name
+            WallpaperTheme.valueOf(
+                prefs.getString("selected_theme", WallpaperTheme.CYBERPUNK.name) ?: WallpaperTheme.CYBERPUNK.name
             )
         )
     }
@@ -87,7 +87,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, prefs: SharedPreferences) {
         Text("Theme Selection", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        val radioOptions = listOf(Theme.CYBERPUNK, Theme.SUMMER_BEACH)
+        val radioOptions = listOf(WallpaperTheme.CYBERPUNK, WallpaperTheme.SUMMER_BEACH)
 
         Column(Modifier.selectableGroup()) {
             radioOptions.forEach { theme ->
