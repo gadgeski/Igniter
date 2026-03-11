@@ -55,6 +55,9 @@ class IgniterWallpaperService : WallpaperService() {
 
         // フレーム間で溜め込む勢いの上限
         private const val MAX_PENDING_WAVE_MOMENTUM = 6.0f
+
+        // センサー由来の波トリガーを連打しすぎないためのクールダウン
+        private const val SENSOR_WAVE_COOLDOWN_MS = 650L
     }
 
     override fun onCreate() {
@@ -102,6 +105,10 @@ class IgniterWallpaperService : WallpaperService() {
         private var lastAccelX = 0f
         private var lastAccelY = 0f
         private var isFirstSensorEvent = true
+
+        // センサー波トリガーのクールダウン管理
+        @Volatile
+        private var lastWaveEmissionMs = 0L
 
         // Renderer 反映待ち状態
         @Volatile
@@ -246,6 +253,7 @@ class IgniterWallpaperService : WallpaperService() {
                     SensorManager.SENSOR_DELAY_GAME
                 )
                 lastInteractionMs = SystemClock.elapsedRealtime()
+                lastWaveEmissionMs = 0L
                 lastLoggedFrameMs = -1L
 
                 if (surfaceReady && eglHelper.isReady) {
@@ -323,12 +331,17 @@ class IgniterWallpaperService : WallpaperService() {
             lastAccelX = x
             lastAccelY = y
 
-            if (movement > WAVE_TRIGGER_THRESHOLD) {
+            val nowMs = SystemClock.elapsedRealtime()
+
+            if (movement > WAVE_TRIGGER_THRESHOLD &&
+                nowMs - lastWaveEmissionMs >= SENSOR_WAVE_COOLDOWN_MS
+            ) {
                 synchronized(pendingStateLock) {
                     pendingWaveMomentum =
                         (pendingWaveMomentum + movement).coerceAtMost(MAX_PENDING_WAVE_MOMENTUM)
                 }
-                lastInteractionMs = SystemClock.elapsedRealtime()
+                lastWaveEmissionMs = nowMs
+                lastInteractionMs = nowMs
             }
         }
 
@@ -442,6 +455,7 @@ class IgniterWallpaperService : WallpaperService() {
             lastAccelX = 0f
             lastAccelY = 0f
             isFirstSensorEvent = true
+            lastWaveEmissionMs = 0L
         }
 
         private fun clearPendingState() {

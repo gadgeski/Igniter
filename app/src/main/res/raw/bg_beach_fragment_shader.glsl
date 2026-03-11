@@ -1,40 +1,48 @@
 // 背景テクスチャ用 フラグメントシェーダー
 // サマービーチの穏やかな水面の揺らぎを表現する
-// 静止時は水面計算（sin/cos）をスキップする版
+// 入力後だけ 2〜3 回ほど揺れて自然に収束する版
 
 precision mediump float;
 
-uniform sampler2D u_Texture;          // 背景テクスチャ
-uniform vec2 u_Tilt;                  // デバイスの傾き（加速度: X, Y）
-uniform float u_Time;                 // 経過時間（秒）
-uniform float u_WaveIntensity;        // 波の強さ
-uniform float u_EnableWaterMotion;    // 1.0=波計算あり, 0.0=波計算なし
+uniform sampler2D u_Texture;
+uniform vec2 u_Tilt;
+uniform float u_Time;
+uniform float u_WaveIntensity;
+uniform float u_WaveProgress;       // 0.0 -> 1.0
+uniform float u_EnableWaterMotion;  // 1.0=揺らす, 0.0=静止
 
-varying vec2 v_TexCoord;              // 頂点シェーダーから受け取ったUV
+varying vec2 v_TexCoord;
+
+// 2〜3回の間くらいで止める
+const float WAVE_OSCILLATION_COUNT = 2.5;
+const float PI = 3.14159265359;
 
 void main() {
-    // 1. パララックス効果
+    // 軽いパララックスは常時残す
     vec2 parallaxOffset = vec2(u_Tilt.x, -u_Tilt.y) * 0.005;
-
-    // 静止時はまずパララックスだけ適用した UV を使う
     vec2 baseUV = clamp(v_TexCoord + parallaxOffset, 0.0, 1.0);
 
-    // 2. 静止時は水面アニメーション計算を行わない
+    // 静止時は波計算を完全にスキップ
     if (u_EnableWaterMotion < 0.5) {
         vec4 bgColor = texture2D(u_Texture, baseUV);
         gl_FragColor = vec4(bgColor.rgb, bgColor.a);
         return;
     }
 
-    // 3. 動いている時だけ穏やかな水面の揺らぎを計算
+    // 進行率に応じて 2.5 周期だけ振動
+    float phase = u_WaveProgress * (PI * 2.0) * WAVE_OSCILLATION_COUNT;
+
+    // 後半に向かって自然に小さくする
+    float envelope = 1.0 - smoothstep(0.0, 1.0, u_WaveProgress);
+    envelope *= envelope;
+
     vec2 waterDistortion = vec2(
-        sin(v_TexCoord.y * 10.0 + u_Time * 2.0),
-        cos(v_TexCoord.x * 10.0 + u_Time * 2.0)
-    ) * 0.01 * u_WaveIntensity;
+        sin(baseUV.y * 10.0 + phase),
+        cos(baseUV.x * 10.0 + phase)
+    ) * 0.012 * u_WaveIntensity * envelope;
 
-    // 4. 最終UV
     vec2 finalUV = clamp(baseUV + waterDistortion, 0.0, 1.0);
-
     vec4 bgColor = texture2D(u_Texture, finalUV);
+
     gl_FragColor = vec4(bgColor.rgb, bgColor.a);
 }

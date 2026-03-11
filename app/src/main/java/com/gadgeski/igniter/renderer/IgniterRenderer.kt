@@ -15,40 +15,36 @@ import java.nio.FloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-/**
- * OpenGL ES 2.0 を使って背景テクスチャとデジタル波紋を描画する Renderer。
- * WallpaperService の GLThread から呼ばれる。
- */
 class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     companion object {
         private const val TAG = "IgniterRenderer"
 
-        // フルスクリーンクワッドの頂点定義 (NDC座標, UV付き)
-        // [X, Y, U, V] × 4頂点 (2トライアングルのトライアングルストリップ)
         private val FULLSCREEN_QUAD = floatArrayOf(
-            -1f,  1f,  0f, 0f,  // 左上
-            -1f, -1f,  0f, 1f,  // 左下
-            1f,  1f,  1f, 0f,  // 右上
-            1f, -1f,  1f, 1f   // 右下
+            -1f,  1f,  0f, 0f,
+            -1f, -1f,  0f, 1f,
+            1f,  1f,  1f, 0f,
+            1f, -1f,  1f, 1f
         )
 
         private const val COORDS_PER_VERTEX = 4
         private const val VERTEX_STRIDE = COORDS_PER_VERTEX * 4
         private const val RIPPLE_DURATION = 2.0f
 
-        // 波の基本値は 0 にする
-        private const val BASE_WAVE_INTENSITY = 0.0f
-        private const val MAX_WAVE_INTENSITY = 3.0f
+        // 背景のうねりは「入力後だけ」短く動かす
+        private const val WATER_PULSE_DURATION_SEC = 2.2f
+        private const val MIN_WAVE_RETRIGGER_MS = 450L
 
-        // これ未満なら「静止」とみなして shader 側の水面計算を止める
-        private const val WATER_MOTION_THRESHOLD = 0.02f
+        private const val MIN_VISIBLE_WAVE_AMPLITUDE = 0.18f
+        private const val MAX_WAVE_AMPLITUDE = 1.8f
+        private const val WATER_MOTION_THRESHOLD = 0.05f
     }
 
     // --- 背景シェーダー location キャッシュ ---
     private var uTimeLocation = -1
     private var uTiltLocation = -1
     private var uWaveIntensityLocation = -1
+    private var uWaveProgressLocation = -1
     private var uEnableWaterMotionLocation = -1
     private var bgPosLoc = -1
     private var bgUvLoc = -1
@@ -61,21 +57,14 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var rippleTimeLoc = -1
     private var rippleResolutionLoc = -1
 
-    // --- 波の連動用変数 ---
-    private var targetWaveIntensity = BASE_WAVE_INTENSITY
-    private var currentWaveIntensity = BASE_WAVE_INTENSITY
-
     // --- OpenGL リソース ---
     private var backgroundProgram = 0
     private var rippleProgram = 0
     private var backgroundTextureId = 0
 
     private var currentTheme = Theme.CYBERPUNK
-
-    // 描画開始時刻
     private var rendererStartMs = 0L
 
-    // 頂点バッファ
     private val quadBuffer: FloatBuffer = ByteBuffer.allocateDirect(FULLSCREEN_QUAD.size * 4)
         .order(ByteOrder.nativeOrder())
         .asFloatBuffer()
@@ -88,7 +77,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var screenWidth = 1f
     private var screenHeight = 1f
 
-    // --- 加速度（傾き）状態 ---
+    // --- 傾き ---
     @Volatile
     private var tiltX = 0f
 
@@ -108,12 +97,18 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     @Volatile
     private var isRippleActive = false
 
+    // --- 背景うねりパルス状態 ---
+    private var currentWaveAmplitude = 0f
+    private var currentWaveProgress = 1f
+    private var isWaterPulseActive = false
+    private var waterPulseStartMs = -1L
+    private var lastWaveTriggerMs = -1L
+
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         Log.d(TAG, "onSurfaceCreated")
         rendererStartMs = SystemClock.elapsedRealtime()
 
         GLES20.glClearColor(0f, 0f, 0f, 1f)
-
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
     }
@@ -126,16 +121,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     }
 
     override fun onDrawFrame(gl: GL10?) {
-        // 波の勢いを静かな値へ戻す
-        targetWaveIntensity = (targetWaveIntensity - 0.05f).coerceAtLeast(BASE_WAVE_INTENSITY)
-
-        // 滑らかに補間
-        currentWaveIntensity += (targetWaveIntensity - currentWaveIntensity) * 0.1f
-
-        // しきい値未満は明示的に 0 扱いにして静止へ寄せる
-        if (currentWaveIntensity < WATER_MOTION_THRESHOLD) {
-            currentWaveIntensity = 0f
-        }
+        updateWaterPulseState()
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
@@ -149,6 +135,24 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
                 isRippleActive = false
             }
         }
+    }
+
+    private fun updateWaterPulseState() {
+        if (!isWaterPulseActive || waterPulseStartMs < 0L) {
+            currentWaveAmplitude = 0f
+            currentWaveProgress = 1f
+            return
+        }
+
+        val elapsedSec = (SystemClock.elapsedRealtime() - waterPulseStartMs) / 1000f
+        if (elapsedSec >= WATER_PULSE_DURATION_SEC) {
+            isWaterPulseActive = false
+            currentWaveAmplitude = 0f
+            currentWaveProgress = 1f
+            return
+        }
+
+        currentWaveProgress = (elapsedSec / WATER_PULSE_DURATION_SEC).coerceIn(0f, 1f)
     }
 
     private fun drawBackground() {
@@ -194,15 +198,22 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
 
         if (uWaveIntensityLocation >= 0) {
-            GLES20.glUniform1f(uWaveIntensityLocation, currentWaveIntensity)
+            GLES20.glUniform1f(
+                uWaveIntensityLocation,
+                if (isWaterPulseActive) currentWaveAmplitude else 0f
+            )
+        }
+
+        if (uWaveProgressLocation >= 0) {
+            GLES20.glUniform1f(
+                uWaveProgressLocation,
+                if (isWaterPulseActive) currentWaveProgress else 1f
+            )
         }
 
         if (uEnableWaterMotionLocation >= 0) {
-            val isWaterMotionEnabled = currentWaveIntensity > WATER_MOTION_THRESHOLD
-            GLES20.glUniform1f(
-                uEnableWaterMotionLocation,
-                if (isWaterMotionEnabled) 1f else 0f
-            )
+            val enabled = isWaterPulseActive && currentWaveAmplitude > WATER_MOTION_THRESHOLD
+            GLES20.glUniform1f(uEnableWaterMotionLocation, if (enabled) 1f else 0f)
         }
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
@@ -255,9 +266,6 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glDisableVertexAttribArray(rippleUvLoc)
     }
 
-    /**
-     * テーマを変更する。必ずGLスレッドから呼ぶこと。
-     */
     fun setTheme(theme: Theme) {
         if (currentTheme == theme && backgroundProgram != 0) return
 
@@ -299,17 +307,16 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             Log.e(TAG, "Shader program build failed for $theme!")
         }
 
-        // 背景シェーダー
         uTimeLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_Time")
         uTiltLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_Tilt")
         uWaveIntensityLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_WaveIntensity")
+        uWaveProgressLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_WaveProgress")
         uEnableWaterMotionLocation =
             GLES20.glGetUniformLocation(backgroundProgram, "u_EnableWaterMotion")
         bgPosLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
         bgUvLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_TexCoord")
         bgTextureLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Texture")
 
-        // 波紋シェーダー
         ripplePosLoc = GLES20.glGetAttribLocation(rippleProgram, "a_Position")
         rippleUvLoc = GLES20.glGetAttribLocation(rippleProgram, "a_TexCoord")
         rippleTouchLoc = GLES20.glGetUniformLocation(rippleProgram, "u_Touch")
@@ -321,14 +328,29 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             Log.e(TAG, "Background texture load failed for $theme!")
         }
 
-        // テーマ変更直後に前テーマの残り勢いを持ち越さない
-        targetWaveIntensity = BASE_WAVE_INTENSITY
-        currentWaveIntensity = BASE_WAVE_INTENSITY
+        resetWaterPulseState()
     }
 
     fun addWaveMomentum(momentum: Float) {
-        targetWaveIntensity =
-            (targetWaveIntensity + momentum * 0.5f).coerceAtMost(MAX_WAVE_INTENSITY)
+        val nowMs = SystemClock.elapsedRealtime()
+
+        val amplitudeBoost = (momentum * 0.35f).coerceIn(0.12f, 0.75f)
+
+        // センサー連打で毎回リスタートしすぎないよう少し間引く
+        if (lastWaveTriggerMs > 0L && nowMs - lastWaveTriggerMs < MIN_WAVE_RETRIGGER_MS) {
+            currentWaveAmplitude =
+                (currentWaveAmplitude + amplitudeBoost * 0.35f).coerceAtMost(MAX_WAVE_AMPLITUDE)
+            return
+        }
+
+        currentWaveAmplitude =
+            (currentWaveAmplitude * 0.35f + amplitudeBoost)
+                .coerceIn(MIN_VISIBLE_WAVE_AMPLITUDE, MAX_WAVE_AMPLITUDE)
+
+        waterPulseStartMs = nowMs
+        lastWaveTriggerMs = nowMs
+        currentWaveProgress = 0f
+        isWaterPulseActive = true
     }
 
     fun updateTilt(x: Float, y: Float) {
@@ -339,7 +361,6 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     fun updateTouch(x: Float, y: Float) {
         touchNormX = x / screenWidth
         touchNormY = y / screenHeight
-
         touchStartMs = SystemClock.elapsedRealtime()
         isRippleActive = true
     }
@@ -361,6 +382,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         uTimeLocation = -1
         uTiltLocation = -1
         uWaveIntensityLocation = -1
+        uWaveProgressLocation = -1
         uEnableWaterMotionLocation = -1
         bgPosLoc = -1
         bgUvLoc = -1
@@ -372,7 +394,14 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         rippleTimeLoc = -1
         rippleResolutionLoc = -1
 
-        targetWaveIntensity = BASE_WAVE_INTENSITY
-        currentWaveIntensity = BASE_WAVE_INTENSITY
+        resetWaterPulseState()
+    }
+
+    private fun resetWaterPulseState() {
+        currentWaveAmplitude = 0f
+        currentWaveProgress = 1f
+        isWaterPulseActive = false
+        waterPulseStartMs = -1L
+        lastWaveTriggerMs = -1L
     }
 }
