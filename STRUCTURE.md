@@ -31,7 +31,7 @@ Igniter/
 │       │   │               │   └── IgniterRenderer.kt
 │       │   │               ├── settings
 │       │   │               │   ├── SettingsActivity.kt
-│       │   │               │   └── Theme.kt
+│       │   │               │   └── WallpaperTheme.kt
 │       │   │               └── ui
 │       │   │                   └── theme
 │       │   │                       ├── Color.kt
