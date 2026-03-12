@@ -1,32 +1,33 @@
 package com.gadgeski.igniter.settings
 
-import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,39 +35,114 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import com.gadgeski.igniter.ui.theme.IgniterTheme
+import kotlinx.coroutines.launch
 
 class SettingsActivity : ComponentActivity() {
 
-    private lateinit var prefs: SharedPreferences
+    companion object {
+        private const val PREFS_NAME = "igniter_prefs"
+        private const val KEY_SELECTED_THEME = "selected_theme"
+    }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        prefs = getSharedPreferences("igniter_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val initialTheme = WallpaperTheme.fromName(
+            prefs.getString(KEY_SELECTED_THEME, WallpaperTheme.CYBERPUNK.name)
+        )
 
         setContent {
             IgniterTheme {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text("Igniter Settings") },
-                            navigationIcon = {
-                                IconButton(onClick = { finish() }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back"
-                                    )
+                SettingsScreen(
+                    initialTheme = initialTheme,
+                    onThemeSelected = { theme ->
+                        prefs.edit {
+                            putString(KEY_SELECTED_THEME, theme.name)
+                        }
+                    },
+                    onClose = { finish() }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsScreen(
+    initialTheme: WallpaperTheme,
+    onThemeSelected: (WallpaperTheme) -> Unit,
+    onClose: () -> Unit
+) {
+    var selectedTheme by remember { mutableStateOf(initialTheme) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = "Wallpaper Settings")
+                },
+                actions = {
+                    TextButton(onClick = onClose) {
+                        Text("Done")
+                    }
+                }
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Choose a wallpaper theme",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = "Your selection is saved immediately and reflected in the live wallpaper.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.selectableGroup()
+                ) {
+                    WallpaperTheme.entries.forEachIndexed { index, theme ->
+                        ThemeRow(
+                            theme = theme,
+                            selected = selectedTheme == theme,
+                            onClick = {
+                                if (selectedTheme != theme) {
+                                    selectedTheme = theme
+                                    onThemeSelected(theme)
+
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "${theme.displayName} applied"
+                                        )
+                                    }
                                 }
                             }
                         )
+
+                        if (index != WallpaperTheme.entries.lastIndex) {
+                            HorizontalDivider()
+                        }
                     }
-                ) { innerPadding ->
-                    SettingsScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        prefs = prefs
-                    )
                 }
             }
         }
@@ -74,49 +150,50 @@ class SettingsActivity : ComponentActivity() {
 }
 
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier, prefs: SharedPreferences) {
-    var selectedTheme by remember {
-        mutableStateOf(
-            WallpaperTheme.valueOf(
-                prefs.getString("selected_theme", WallpaperTheme.CYBERPUNK.name) ?: WallpaperTheme.CYBERPUNK.name
+private fun ThemeRow(
+    theme: WallpaperTheme,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton
             )
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = theme.displayName,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Text(
+                text = themeDescription(theme),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        RadioButton(
+            selected = selected,
+            onClick = null
         )
     }
+}
 
-    Column(modifier = modifier.padding(16.dp)) {
-        Text("Theme Selection", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val radioOptions = listOf(WallpaperTheme.CYBERPUNK, WallpaperTheme.SUMMER_BEACH)
-
-        Column(Modifier.selectableGroup()) {
-            radioOptions.forEach { theme ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .selectable(
-                            selected = (theme == selectedTheme),
-                            onClick = {
-                                selectedTheme = theme
-                                prefs.edit { putString("selected_theme", theme.name) }
-                            },
-                            role = Role.RadioButton
-                        )
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = (theme == selectedTheme),
-                        onClick = null
-                    )
-                    Text(
-                        text = theme.name.replace("_", " "),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }
-            }
-        }
+private fun themeDescription(theme: WallpaperTheme): String {
+    return when (theme) {
+        WallpaperTheme.CYBERPUNK -> "Neon glow with a futuristic cyber mood."
+        WallpaperTheme.SUMMER_BEACH -> "Warm beach atmosphere with soft water motion."
+        WallpaperTheme.FLOWER_STORM -> "Floral energy with a gentle flowing feel."
+        WallpaperTheme.SILENT_CITY -> "Quiet urban mood with calm, restrained motion."
+        WallpaperTheme.SPARKLING_SKY -> "Light, airy sky scene with subtle shimmer."
     }
 }

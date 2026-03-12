@@ -137,13 +137,8 @@ class IgniterWallpaperService : WallpaperService() {
                     val themeName = sharedPreferences.getString(
                         "selected_theme",
                         WallpaperTheme.CYBERPUNK.name
-                    ) ?: WallpaperTheme.CYBERPUNK.name
-
-                    val theme = try {
-                        WallpaperTheme.valueOf(themeName)
-                    } catch (_: Exception) {
-                        WallpaperTheme.CYBERPUNK
-                    }
+                    )
+                    val theme = WallpaperTheme.fromName(themeName)
 
                     Log.d(TAG, "Theme changed to $theme, scheduling reload on GL thread")
                     scope.launch {
@@ -185,13 +180,8 @@ class IgniterWallpaperService : WallpaperService() {
                 val themeName = prefs.getString(
                     "selected_theme",
                     WallpaperTheme.CYBERPUNK.name
-                ) ?: WallpaperTheme.CYBERPUNK.name
-
-                val initialTheme = try {
-                    WallpaperTheme.valueOf(themeName)
-                } catch (_: Exception) {
-                    WallpaperTheme.CYBERPUNK
-                }
+                )
+                val initialTheme = WallpaperTheme.fromName(themeName)
 
                 renderer.setTheme(initialTheme)
 

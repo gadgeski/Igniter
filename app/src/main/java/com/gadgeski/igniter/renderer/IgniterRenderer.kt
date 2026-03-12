@@ -290,6 +290,24 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
                 bgFragmentStr = R.raw.bg_beach_fragment_shader
                 rippleFragmentStr = R.raw.ripple_beach_fragment_shader
             }
+
+            WallpaperTheme.FLOWER_STORM -> {
+                bgTextureRes = R.drawable.bg_flower_storm
+                bgFragmentStr = R.raw.bg_beach_fragment_shader
+                rippleFragmentStr = R.raw.ripple_beach_fragment_shader
+            }
+
+            WallpaperTheme.SILENT_CITY -> {
+                bgTextureRes = R.drawable.bg_silent_city
+                bgFragmentStr = R.raw.bg_cyberpunk_fragment_shader
+                rippleFragmentStr = R.raw.ripple_cyberpunk_fragment_shader
+            }
+
+            WallpaperTheme.SPARKLING_SKY -> {
+                bgTextureRes = R.drawable.bg_sparkling_sky
+                bgFragmentStr = R.raw.bg_beach_fragment_shader
+                rippleFragmentStr = R.raw.ripple_beach_fragment_shader
+            }
         }
 
         backgroundProgram = ShaderHelper.buildProgram(
@@ -333,7 +351,6 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     fun addWaveMomentum(momentum: Float) {
         val nowMs = SystemClock.elapsedRealtime()
-
         val amplitudeBoost = (momentum * 0.35f).coerceIn(0.12f, 0.75f)
 
         // センサー連打で毎回リスタートしすぎないよう少し間引く
