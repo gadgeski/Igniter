@@ -274,51 +274,15 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
         release()
 
-        val bgTextureRes: Int
-        val bgFragmentStr: Int
-        val rippleFragmentStr: Int
-
-        when (theme) {
-            WallpaperTheme.CYBERPUNK -> {
-                bgTextureRes = R.drawable.igniter_bg
-                bgFragmentStr = R.raw.bg_cyberpunk_fragment_shader
-                rippleFragmentStr = R.raw.ripple_cyberpunk_fragment_shader
-            }
-
-            WallpaperTheme.SUMMER_BEACH -> {
-                bgTextureRes = R.drawable.bg_summer_beach
-                bgFragmentStr = R.raw.bg_beach_fragment_shader
-                rippleFragmentStr = R.raw.ripple_beach_fragment_shader
-            }
-
-            WallpaperTheme.FLOWER_STORM -> {
-                bgTextureRes = R.drawable.bg_flower_storm
-                bgFragmentStr = R.raw.bg_beach_fragment_shader
-                rippleFragmentStr = R.raw.ripple_beach_fragment_shader
-            }
-
-            WallpaperTheme.SILENT_CITY -> {
-                bgTextureRes = R.drawable.bg_silent_city
-                bgFragmentStr = R.raw.bg_cyberpunk_fragment_shader
-                rippleFragmentStr = R.raw.ripple_cyberpunk_fragment_shader
-            }
-
-            WallpaperTheme.SPARKLING_SKY -> {
-                bgTextureRes = R.drawable.bg_sparkling_sky
-                bgFragmentStr = R.raw.bg_beach_fragment_shader
-                rippleFragmentStr = R.raw.ripple_beach_fragment_shader
-            }
-        }
-
         backgroundProgram = ShaderHelper.buildProgram(
             context,
             R.raw.background_vertex_shader,
-            bgFragmentStr
+            theme.backgroundFragmentShaderRes
         )
         rippleProgram = ShaderHelper.buildProgram(
             context,
             R.raw.ripple_vertex_shader,
-            rippleFragmentStr
+            theme.rippleFragmentShaderRes
         )
 
         if (backgroundProgram == 0 || rippleProgram == 0) {
@@ -341,14 +305,13 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         rippleTimeLoc = GLES20.glGetUniformLocation(rippleProgram, "u_Time")
         rippleResolutionLoc = GLES20.glGetUniformLocation(rippleProgram, "u_Resolution")
 
-        backgroundTextureId = TextureHelper.loadTexture(context, bgTextureRes)
+        backgroundTextureId = TextureHelper.loadTexture(context, theme.backgroundDrawableRes)
         if (backgroundTextureId == 0) {
             Log.e(TAG, "Background texture load failed for $theme!")
         }
 
         resetWaterPulseState()
     }
-
     fun addWaveMomentum(momentum: Float) {
         val nowMs = SystemClock.elapsedRealtime()
         val amplitudeBoost = (momentum * 0.35f).coerceIn(0.12f, 0.75f)

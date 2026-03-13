@@ -83,9 +83,7 @@ private fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(text = "Wallpaper Settings")
-                },
+                title = { Text(text = "Wallpaper Settings") },
                 actions = {
                     TextButton(onClick = onClose) {
                         Text("Done")
@@ -175,7 +173,7 @@ private fun ThemeRow(
             )
 
             Text(
-                text = themeDescription(theme),
+                text = theme.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -185,15 +183,5 @@ private fun ThemeRow(
             selected = selected,
             onClick = null
         )
-    }
-}
-
-private fun themeDescription(theme: WallpaperTheme): String {
-    return when (theme) {
-        WallpaperTheme.CYBERPUNK -> "Neon glow with a futuristic cyber mood."
-        WallpaperTheme.SUMMER_BEACH -> "Warm beach atmosphere with soft water motion."
-        WallpaperTheme.FLOWER_STORM -> "Floral energy with a gentle flowing feel."
-        WallpaperTheme.SILENT_CITY -> "Quiet urban mood with calm, restrained motion."
-        WallpaperTheme.SPARKLING_SKY -> "Light, airy sky scene with subtle shimmer."
     }
 }
