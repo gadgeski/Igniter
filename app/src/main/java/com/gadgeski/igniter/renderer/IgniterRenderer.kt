@@ -312,6 +312,7 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
         resetWaterPulseState()
     }
+
     fun addWaveMomentum(momentum: Float) {
         val nowMs = SystemClock.elapsedRealtime()
         val amplitudeBoost = (momentum * 0.35f).coerceIn(0.12f, 0.75f)
