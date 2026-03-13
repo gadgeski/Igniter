@@ -39,6 +39,9 @@ Igniter/
 │       │   │                       └── Type.kt
 │       │   └── res
 │       │       ├── drawable
+│       │       │   ├── bg_flower_storm.webp
+│       │       │   ├── bg_silent_city.webp
+│       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_summer_beach.webp
 │       │       │   ├── ic_launcher_background.xml
 │       │       │   ├── ic_launcher_foreground.xml
@@ -100,5 +103,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 63 files
+37 directories, 66 files
 ```
