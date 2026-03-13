@@ -30,13 +30,6 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         private const val COORDS_PER_VERTEX = 4
         private const val VERTEX_STRIDE = COORDS_PER_VERTEX * 4
         private const val RIPPLE_DURATION = 2.0f
-
-        // 背景のうねりは「入力後だけ」短く動かす
-        private const val WATER_PULSE_DURATION_SEC = 2.2f
-        private const val MIN_WAVE_RETRIGGER_MS = 450L
-
-        private const val MIN_VISIBLE_WAVE_AMPLITUDE = 0.18f
-        private const val MAX_WAVE_AMPLITUDE = 1.8f
         private const val WATER_MOTION_THRESHOLD = 0.05f
     }
 
@@ -145,14 +138,15 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         }
 
         val elapsedSec = (SystemClock.elapsedRealtime() - waterPulseStartMs) / 1000f
-        if (elapsedSec >= WATER_PULSE_DURATION_SEC) {
+        if (elapsedSec >= currentTheme.waterPulseDurationSec) {
             isWaterPulseActive = false
             currentWaveAmplitude = 0f
             currentWaveProgress = 1f
             return
         }
 
-        currentWaveProgress = (elapsedSec / WATER_PULSE_DURATION_SEC).coerceIn(0f, 1f)
+        currentWaveProgress =
+            (elapsedSec / currentTheme.waterPulseDurationSec).coerceIn(0f, 1f)
     }
 
     private fun drawBackground() {
@@ -315,18 +309,23 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     fun addWaveMomentum(momentum: Float) {
         val nowMs = SystemClock.elapsedRealtime()
-        val amplitudeBoost = (momentum * 0.35f).coerceIn(0.12f, 0.75f)
+        val amplitudeBoost = (momentum * currentTheme.waveBoostScale).coerceIn(0.12f, 0.75f)
 
-        // センサー連打で毎回リスタートしすぎないよう少し間引く
-        if (lastWaveTriggerMs > 0L && nowMs - lastWaveTriggerMs < MIN_WAVE_RETRIGGER_MS) {
+        if (lastWaveTriggerMs > 0L &&
+            nowMs - lastWaveTriggerMs < currentTheme.minWaveRetriggerMs
+        ) {
             currentWaveAmplitude =
-                (currentWaveAmplitude + amplitudeBoost * 0.35f).coerceAtMost(MAX_WAVE_AMPLITUDE)
+                (currentWaveAmplitude + amplitudeBoost * 0.35f)
+                    .coerceAtMost(currentTheme.maxWaveAmplitude)
             return
         }
 
         currentWaveAmplitude =
             (currentWaveAmplitude * 0.35f + amplitudeBoost)
-                .coerceIn(MIN_VISIBLE_WAVE_AMPLITUDE, MAX_WAVE_AMPLITUDE)
+                .coerceIn(
+                    currentTheme.minVisibleWaveAmplitude,
+                    currentTheme.maxWaveAmplitude
+                )
 
         waterPulseStartMs = nowMs
         lastWaveTriggerMs = nowMs

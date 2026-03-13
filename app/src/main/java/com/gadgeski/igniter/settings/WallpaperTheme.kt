@@ -9,14 +9,26 @@ enum class WallpaperTheme(
     val description: String,
     @field:DrawableRes val backgroundDrawableRes: Int,
     @field:RawRes val backgroundFragmentShaderRes: Int,
-    @field:RawRes val rippleFragmentShaderRes: Int
+    @field:RawRes val rippleFragmentShaderRes: Int,
+
+    // --- Motion profile ---
+    val waveBoostScale: Float,
+    val minVisibleWaveAmplitude: Float,
+    val maxWaveAmplitude: Float,
+    val waterPulseDurationSec: Float,
+    val minWaveRetriggerMs: Long
 ) {
     CYBERPUNK(
         displayName = "Cyberpunk",
         description = "Neon glow with a futuristic cyber mood.",
         backgroundDrawableRes = R.drawable.igniter_bg,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.28f,
+        minVisibleWaveAmplitude = 0.14f,
+        maxWaveAmplitude = 1.35f,
+        waterPulseDurationSec = 1.8f,
+        minWaveRetriggerMs = 380L
     ),
 
     SUMMER_BEACH(
@@ -24,7 +36,12 @@ enum class WallpaperTheme(
         description = "Warm beach atmosphere with soft water motion.",
         backgroundDrawableRes = R.drawable.bg_summer_beach,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader
+        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
+        waveBoostScale = 0.33f,
+        minVisibleWaveAmplitude = 0.18f,
+        maxWaveAmplitude = 1.55f,
+        waterPulseDurationSec = 2.4f,
+        minWaveRetriggerMs = 500L
     ),
 
     FLOWER_STORM(
@@ -32,7 +49,12 @@ enum class WallpaperTheme(
         description = "Floral energy with a gentle flowing feel.",
         backgroundDrawableRes = R.drawable.bg_flower_storm,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader
+        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
+        waveBoostScale = 0.38f,
+        minVisibleWaveAmplitude = 0.22f,
+        maxWaveAmplitude = 1.75f,
+        waterPulseDurationSec = 2.7f,
+        minWaveRetriggerMs = 520L
     ),
 
     SILENT_CITY(
@@ -40,7 +62,12 @@ enum class WallpaperTheme(
         description = "Quiet urban mood with calm, restrained motion.",
         backgroundDrawableRes = R.drawable.bg_silent_city,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.22f,
+        minVisibleWaveAmplitude = 0.10f,
+        maxWaveAmplitude = 1.00f,
+        waterPulseDurationSec = 1.5f,
+        minWaveRetriggerMs = 650L
     ),
 
     SPARKLING_SKY(
@@ -48,7 +75,12 @@ enum class WallpaperTheme(
         description = "Light, airy sky scene with subtle shimmer.",
         backgroundDrawableRes = R.drawable.bg_sparkling_sky,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader
+        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
+        waveBoostScale = 0.24f,
+        minVisibleWaveAmplitude = 0.12f,
+        maxWaveAmplitude = 1.15f,
+        waterPulseDurationSec = 2.0f,
+        minWaveRetriggerMs = 600L
     );
 
     companion object {
