@@ -81,7 +81,7 @@ enum class WallpaperTheme(
         backgroundDrawableRes = R.drawable.bg_sparkling_sky,
         thumbnailDrawableRes = R.drawable.bg_sparkling_sky,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_sparkling_sky_fragment_shader,
         waveBoostScale = 0.24f,
         minVisibleWaveAmplitude = 0.12f,
         maxWaveAmplitude = 1.15f,
