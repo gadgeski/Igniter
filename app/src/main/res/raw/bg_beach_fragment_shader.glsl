@@ -16,6 +16,9 @@ const float PI = 3.14159265359;
 const float PARALLAX_SCALE = 0.0035;
 const float WAVE_DISTORTION_SCALE = 0.012;
 
+// 端からこの範囲でフェードアウトを始める
+const float EDGE_FADE_MARGIN = 0.12;
+
 void main() {
     vec2 baseUV = v_TexCoord + vec2(u_Tilt.x, -u_Tilt.y) * PARALLAX_SCALE;
 
@@ -28,10 +31,14 @@ void main() {
     float envelope = 1.0 - smoothstep(0.0, 1.0, u_WaveProgress);
     envelope *= envelope;
 
+    // 上下端に近いほど distortion を 0 に近づける
+    float edgeFade = smoothstep(0.0, EDGE_FADE_MARGIN, v_TexCoord.y)
+                   * smoothstep(0.0, EDGE_FADE_MARGIN, 1.0 - v_TexCoord.y);
+
     vec2 waterDistortion = vec2(
         sin(baseUV.y * 10.0 + phase),
         cos(baseUV.x * 10.0 + phase)
-    ) * WAVE_DISTORTION_SCALE * u_WaveIntensity * envelope;
+    ) * WAVE_DISTORTION_SCALE * u_WaveIntensity * envelope * edgeFade;
 
     gl_FragColor = texture2D(u_Texture, baseUV + waterDistortion);
 }
