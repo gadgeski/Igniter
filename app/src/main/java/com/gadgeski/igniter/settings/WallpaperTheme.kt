@@ -52,7 +52,7 @@ enum class WallpaperTheme(
         description = "Floral energy with a gentle flowing feel.",
         backgroundDrawableRes = R.drawable.bg_flower_storm,
         thumbnailDrawableRes = R.drawable.bg_flower_storm,
-        backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
+        backgroundFragmentShaderRes = R.raw.bg_flower_storm_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_flower_storm_fragment_shader,
         waveBoostScale = 0.38f,
         minVisibleWaveAmplitude = 0.22f,
