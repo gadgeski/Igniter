@@ -1,6 +1,6 @@
 // 背景テクスチャ用 フラグメントシェーダー
 // FLOWER_STORM専用
-// 花びらが舞う雰囲気にオーロラ効果を重ねた幻想的な表現
+// 花びらが舞う雰囲気に上からオレンジ・黄色・マゼンタのグラデーションをふわっと重ねる
 precision mediump float;
 
 uniform sampler2D u_Texture;
@@ -12,55 +12,69 @@ uniform float u_EnableWaterMotion;
 
 varying vec2 v_TexCoord;
 
+const float WAVE_OSCILLATION_COUNT = 1.8;
 const float PI = 3.14159265359;
-const float PARALLAX_SCALE = 0.0025;
+const float PARALLAX_SCALE = 0.0030;
+const float WAVE_DISTORTION_SCALE = 0.008;
 const float EDGE_FADE_MARGIN = 0.15;
 
-// オーロラ定数
-const float AURORA_SPEED = 0.4;
-const float AURORA_INTENSITY = 0.40;
-const float AURORA_BAND_COUNT = 2.0;
+// グラデーションカラー定義
+const vec3 COLOR_TOP    = vec3(0.00, 0.37, 1.0);
+const vec3 COLOR_MID    = vec3(0.97, 0.00, 0.75);
+const vec3 COLOR_BOTTOM = vec3(0.83, 0.00, 0.97);
 
-// オーロラカラー定義
-const vec3 AURORA_COLOR_1 = vec3(1.00, 0.45, 0.00); // オレンジ
-const vec3 AURORA_COLOR_2 = vec3(1.00, 0.90, 0.00); // 黄色
-const vec3 AURORA_COLOR_3 = vec3(1.00, 0.00, 0.70); // マゼンタ
+// グラデーションの強さ
+const float GRADIENT_INTENSITY = 0.55;
 
 void main() {
     vec2 baseUV = v_TexCoord + vec2(u_Tilt.x, -u_Tilt.y) * PARALLAX_SCALE;
 
-    // 背景テクスチャをサンプリング
     vec4 bgColor = texture2D(u_Texture, baseUV);
 
-    // --- オーロラ計算 ---
-    float t = u_Time * AURORA_SPEED;
+    // --- グラデーション計算 ---
+    // 上端が強く、下に向かって消える
+    float gradientBase = smoothstep(1.0, 0.4, v_TexCoord.y);
 
-    // 縦方向に流れる帯を複数重ねる
-    float band1 = sin(v_TexCoord.x * PI * AURORA_BAND_COUNT + t) * 0.5 + 0.5;
-    float band2 = sin(v_TexCoord.x * PI * AURORA_BAND_COUNT * 1.7 + t * 1.3 + 1.2) * 0.5 + 0.5;
-    float band3 = sin(v_TexCoord.x * PI * AURORA_BAND_COUNT * 0.6 + t * 0.7 + 2.4) * 0.5 + 0.5;
+    // 上→中→下の3色グラデーション
+    vec3 gradientColor = mix(COLOR_BOTTOM, COLOR_MID, smoothstep(0.0, 0.5, v_TexCoord.y));
+    gradientColor = mix(gradientColor, COLOR_TOP, smoothstep(0.3, 0.0, v_TexCoord.y));
 
-    // 縦方向のフェード（画面中央付近に出る）
-    float verticalFade = smoothstep(0.0, 0.25, v_TexCoord.y)
-                       * smoothstep(0.0, 0.25, 1.0 - v_TexCoord.y);
+    // 傾きに応じてグラデーションが微妙に変化する
+    float tiltIntensity = clamp(u_Tilt.y / 9.8, 0.0, 1.0);
+    float intensity = gradientBase * (GRADIENT_INTENSITY + 0.15 * tiltIntensity);
 
-    // 3色を混合
-    vec3 auroraColor = mix(AURORA_COLOR_1, AURORA_COLOR_2, band1);
-    auroraColor = mix(auroraColor, AURORA_COLOR_3, band2 * 0.5);
+    // 背景画像にグラデーションを自然に重ねる
+    vec3 litColor = clamp(bgColor.rgb + gradientColor * intensity, 0.0, 1.0);
+    vec3 blendedColor = mix(bgColor.rgb, litColor, intensity);
 
-    float auroraAlpha = (band1 * 0.5 + band2 * 0.3 + band3 * 0.2)
-                      * AURORA_INTENSITY * verticalFade;
-
-    // 波パルスがある場合はオーロラをさらに強調
-    if (u_EnableWaterMotion > 0.5) {
-        float envelope = 1.0 - smoothstep(0.0, 1.0, u_WaveProgress);
-        envelope *= envelope;
-        auroraAlpha += envelope * u_WaveIntensity * 0.18;
+    // --- 波の歪み ---
+    if (u_EnableWaterMotion < 0.5) {
+        gl_FragColor = vec4(blendedColor, bgColor.a);
+        return;
     }
 
-    // 背景画像にオーロラを加算合成
-    vec3 finalColor = bgColor.rgb + auroraColor * auroraAlpha;
+    float phase = u_WaveProgress * (PI * 2.0) * WAVE_OSCILLATION_COUNT;
+    float envelope = 1.0 - smoothstep(0.0, 1.0, u_WaveProgress);
+    envelope *= envelope;
 
-    // 端フェード（オーロラには適用しない、背景の歪みがないため不要）
-    gl_FragColor = vec4(finalColor, bgColor.a);
+    float edgeFade = smoothstep(0.0, EDGE_FADE_MARGIN, v_TexCoord.y)
+                   * smoothstep(0.0, EDGE_FADE_MARGIN, 1.0 - v_TexCoord.y);
+
+    vec2 drift1 = vec2(
+        sin(baseUV.y * 7.0 + phase),
+        cos(baseUV.x * 5.0 + phase * 0.7)
+    );
+    vec2 drift2 = vec2(
+        sin(baseUV.y * 13.0 + phase * 1.3 + 1.5),
+        cos(baseUV.x * 9.0 + phase * 0.5)
+    );
+
+    vec2 waterDistortion = (drift1 * 0.6 + drift2 * 0.4)
+        * WAVE_DISTORTION_SCALE * u_WaveIntensity * envelope * edgeFade;
+
+    vec4 distortedBg = texture2D(u_Texture, baseUV + waterDistortion);
+    vec3 distortedLit = clamp(distortedBg.rgb + gradientColor * intensity, 0.0, 1.0);
+    vec3 finalColor = mix(distortedBg.rgb, distortedLit, intensity);
+
+    gl_FragColor = vec4(finalColor, distortedBg.a);
 }
