@@ -19,12 +19,12 @@ const float WAVE_DISTORTION_SCALE = 0.008;
 const float EDGE_FADE_MARGIN = 0.15;
 
 // グラデーションカラー定義
-const vec3 COLOR_TOP    = vec3(0.00, 0.37, 1.0);
-const vec3 COLOR_MID    = vec3(0.97, 0.00, 0.75);
-const vec3 COLOR_BOTTOM = vec3(0.83, 0.00, 0.97);
+const vec3 COLOR_TOP    = vec3(0.00, 0.45, 0.95);
+const vec3 COLOR_MID    = vec3(0.85, 0.00, 0.60);
+const vec3 COLOR_BOTTOM = vec3(0.45, 0.30, 0.60);
 
 // グラデーションの強さ
-const float GRADIENT_INTENSITY = 0.55;
+const float GRADIENT_INTENSITY = 0.45;
 
 void main() {
     vec2 baseUV = v_TexCoord + vec2(u_Tilt.x, -u_Tilt.y) * PARALLAX_SCALE;
