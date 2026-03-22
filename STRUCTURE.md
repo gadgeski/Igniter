@@ -43,6 +43,7 @@ Igniter/
 │       │       │   ├── bg_silent_city.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_summer_beach.webp
+│       │       │   ├── bg_sunlight_trees.webp
 │       │       │   ├── ic_launcher_background.xml
 │       │       │   ├── ic_launcher_foreground.xml
 │       │       │   └── igniter_bg.webp
@@ -106,5 +107,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 69 files
+37 directories, 70 files
 ```
