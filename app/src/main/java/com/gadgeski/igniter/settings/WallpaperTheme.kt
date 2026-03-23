@@ -87,6 +87,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.15f,
         waterPulseDurationSec = 2.0f,
         minWaveRetriggerMs = 600L
+    ),
+
+    SUNLIGHT_TREES(
+    displayName = "Sunlight Trees",
+    description = "Dappled light through the leaves with a warm, glowing feel.",
+    backgroundDrawableRes = R.drawable.bg_sunlight_trees,
+    thumbnailDrawableRes = R.drawable.bg_sunlight_trees,
+    backgroundFragmentShaderRes = R.raw.bg_sunlight_trees_fragment_shader,
+    rippleFragmentShaderRes = R.raw.ripple_sunlight_trees_fragment_shader,
+    waveBoostScale = 0.26f,
+    minVisibleWaveAmplitude = 0.12f,
+    maxWaveAmplitude = 1.20f,
+    waterPulseDurationSec = 2.2f,
+    minWaveRetriggerMs = 580L
     );
 
     companion object {
