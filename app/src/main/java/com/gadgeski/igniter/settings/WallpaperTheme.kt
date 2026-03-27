@@ -101,6 +101,20 @@ enum class WallpaperTheme(
     maxWaveAmplitude = 1.20f,
     waterPulseDurationSec = 2.2f,
     minWaveRetriggerMs = 580L
+    ),
+
+    SPLASHING_INK(
+        displayName = "Splashing Ink",
+        description = "Abstract ink explosion with glitch and deep purple ripple.",
+        backgroundDrawableRes = R.drawable.bg_splashing_ink,
+        thumbnailDrawableRes = R.drawable.bg_splashing_ink,
+        backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_splashing_ink_fragment_shader,
+        waveBoostScale = 0.35f,
+        minVisibleWaveAmplitude = 0.16f,
+        maxWaveAmplitude = 1.45f,
+        waterPulseDurationSec = 1.6f,
+        minWaveRetriggerMs = 420L
     );
 
     companion object {
