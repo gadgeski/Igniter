@@ -40,7 +40,9 @@ Igniter/
 │       │   └── res
 │       │       ├── drawable
 │       │       │   ├── bg_flower_storm.webp
+│       │       │   ├── bg_large_paint.webp
 │       │       │   ├── bg_silent_city.webp
+│       │       │   ├── bg_simple_wave.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
 │       │       │   ├── bg_summer_beach.webp
@@ -112,5 +114,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 75 files
+37 directories, 77 files
 ```
