@@ -115,6 +115,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.45f,
         waterPulseDurationSec = 1.6f,
         minWaveRetriggerMs = 420L
+    ),
+
+    LARGE_PAINT(
+        displayName = "Large Paint",
+        description = "Vivid painted texture with pulsing light and fiery ripple.",
+        backgroundDrawableRes = R.drawable.bg_large_paint,
+        thumbnailDrawableRes = R.drawable.bg_large_paint,
+        backgroundFragmentShaderRes = R.raw.bg_large_paint_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_large_paint_fragment_shader,
+        waveBoostScale = 0.30f,
+        minVisibleWaveAmplitude = 0.14f,
+        maxWaveAmplitude = 1.40f,
+        waterPulseDurationSec = 2.0f,
+        minWaveRetriggerMs = 480L
     );
 
     companion object {
