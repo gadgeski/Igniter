@@ -12,12 +12,12 @@ uniform float u_EnableWaterMotion;
 
 varying vec2 v_TexCoord;
 
-const float PARALLAX_SCALE    = 0.0025;
+const float PARALLAX_SCALE    = 0.0015;
 const float PULSE_SPEED       = 1.2;   // 脈動の速さ
 const float PULSE_INTENSITY   = 0.18;  // 明暗の振れ幅
 const float BASE_ABERRATION   = 0.002; // 常時かかる最小収差
 const float MAX_ABERRATION    = 0.022; // 波パルス時の最大収差
-const float EDGE_FADE_MARGIN  = 0.15;
+const float EDGE_FADE_MARGIN  = 0.25;
 
 void main() {
     vec2 baseUV = v_TexCoord + vec2(u_Tilt.x, -u_Tilt.y) * PARALLAX_SCALE;
