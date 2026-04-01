@@ -42,7 +42,6 @@ Igniter/
 │       │       │   ├── bg_flower_storm.webp
 │       │       │   ├── bg_large_paint.webp
 │       │       │   ├── bg_silent_city.webp
-│       │       │   ├── bg_simple_wave.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
 │       │       │   ├── bg_summer_beach.webp
@@ -79,11 +78,13 @@ Igniter/
 │       │       │   ├── bg_beach_fragment_shader.glsl
 │       │       │   ├── bg_cyberpunk_fragment_shader.glsl
 │       │       │   ├── bg_flower_storm_fragment_shader.glsl
+│       │       │   ├── bg_large_paint_fragment_shader.glsl
 │       │       │   ├── bg_splashing_ink_fragment_shader.glsl
 │       │       │   ├── bg_sunlight_trees_fragment_shader.glsl
 │       │       │   ├── ripple_beach_fragment_shader.glsl
 │       │       │   ├── ripple_cyberpunk_fragment_shader.glsl
 │       │       │   ├── ripple_flower_storm_fragment_shader.glsl
+│       │       │   ├── ripple_large_paint_fragment_shader.glsl
 │       │       │   ├── ripple_sparkling_sky_fragment_shader.glsl
 │       │       │   ├── ripple_splashing_ink_fragment_shader.glsl
 │       │       │   ├── ripple_sunlight_trees_fragment_shader.glsl
@@ -114,5 +115,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 77 files
+37 directories, 78 files
 ```
