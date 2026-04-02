@@ -22,8 +22,8 @@ enum class WallpaperTheme(
     CYBERPUNK(
         displayName = "Cyberpunk",
         description = "Neon glow with a futuristic cyber mood.",
-        backgroundDrawableRes = R.drawable.igniter_bg,
-        thumbnailDrawableRes = R.drawable.igniter_bg,
+        backgroundDrawableRes = R.drawable.bg_cyberpunk,
+        thumbnailDrawableRes = R.drawable.bg_cyberpunk,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.28f,
