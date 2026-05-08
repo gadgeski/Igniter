@@ -39,6 +39,7 @@ Igniter/
 │       │   │                       └── Type.kt
 │       │   └── res
 │       │       ├── drawable
+│       │       │   ├── bg_cyberpunk.webp
 │       │       │   ├── bg_flower_storm.webp
 │       │       │   ├── bg_large_paint.webp
 │       │       │   ├── bg_silent_city.webp
@@ -47,8 +48,7 @@ Igniter/
 │       │       │   ├── bg_summer_beach.webp
 │       │       │   ├── bg_sunlight_trees.webp
 │       │       │   ├── ic_launcher_background.xml
-│       │       │   ├── ic_launcher_foreground.xml
-│       │       │   └── igniter_bg.webp
+│       │       │   └── ic_launcher_foreground.xml
 │       │       ├── mipmap-anydpi
 │       │       ├── mipmap-anydpi-v26
 │       │       │   ├── ic_launcher.xml
