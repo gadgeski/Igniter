@@ -19,9 +19,9 @@ const float WAVE_DISTORTION_SCALE = 0.008;
 const float EDGE_FADE_MARGIN = 0.15;
 
 // グラデーションカラー定義
-const vec3 COLOR_TOP    = vec3(0.35, 0.35, 0.96);
-const vec3 COLOR_MID    = vec3(0.25, 0.55, 0.65);
-const vec3 COLOR_BOTTOM = vec3(0.25, 0.25, 0.85);
+const vec3 COLOR_TOP    = vec3(0.95, 0.35, 0.35);
+const vec3 COLOR_MID    = vec3(0.65, 0.55, 0.25);
+const vec3 COLOR_BOTTOM = vec3(0.85, 0.25, 0.25);
 
 // グラデーションの強さ
 const float GRADIENT_INTENSITY = 0.52;
