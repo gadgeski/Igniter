@@ -16,9 +16,9 @@ const float RIPPLE_WIDTH    = 0.028;  // 少し柔らかめ
 const float RIPPLE_DURATION = 2.0;    // 波紋の持続秒数
 
 // Flower Storm カラー定義
-const vec3 COLOR_RIPPLE = vec3(0.96, 0.42, 0.74); // ローズピンク〜マゼンタ
-const vec3 COLOR_CORE   = vec3(1.00, 0.90, 0.96); // 白寄りの薄ピンク
-const vec3 COLOR_GLOW   = vec3(0.88, 0.62, 0.96); // ラベンダー寄りグロー
+const vec3 COLOR_RIPPLE = vec3(0.85, 0.15, 0.2);
+const vec3 COLOR_CORE   = vec3(0.6, 0.05, 0.1);
+const vec3 COLOR_GLOW   = vec3(0.95, 0.4, 0.35);
 
 void main() {
     // アスペクト比補正
