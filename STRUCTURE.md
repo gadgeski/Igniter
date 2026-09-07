@@ -40,13 +40,16 @@ Igniter/
 │       │   └── res
 │       │       ├── drawable
 │       │       │   ├── bg_cyberpunk.webp
+│       │       │   ├── bg_ember_line.webp
 │       │       │   ├── bg_flower_storm.webp
+│       │       │   ├── bg_ignition_line.webp
 │       │       │   ├── bg_large_paint.webp
 │       │       │   ├── bg_silent_city.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
 │       │       │   ├── bg_summer_beach.webp
 │       │       │   ├── bg_sunlight_trees.webp
+│       │       │   ├── bg_viridian_line.webp
 │       │       │   ├── ic_launcher_background.xml
 │       │       │   └── ic_launcher_foreground.xml
 │       │       ├── mipmap-anydpi
@@ -115,5 +118,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 78 files
+37 directories, 81 files
 ```
