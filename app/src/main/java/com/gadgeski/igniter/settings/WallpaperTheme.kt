@@ -130,7 +130,7 @@ enum class WallpaperTheme(
         waterPulseDurationSec = 2.0f,
         minWaveRetriggerMs = 480L
     ),
-    
+
     VIOLET_VENT(
         displayName = "Violet Vent",
         description = "Armored plating breathing violet light through honeycomb vents.",
@@ -157,6 +157,48 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.30f,
         waterPulseDurationSec = 1.5f,
         minWaveRetriggerMs = 380L
+    ),
+
+    IGNITION_LINE(
+    displayName = "Ignition Line",
+    description = "Cyan circuitry running vertical through dark plating.",
+    backgroundDrawableRes = R.drawable.bg_ignition_line,
+    thumbnailDrawableRes = R.drawable.bg_ignition_line,
+    backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+    rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+    waveBoostScale = 0.28f,
+    minVisibleWaveAmplitude = 0.13f,
+    maxWaveAmplitude = 1.25f,
+    waterPulseDurationSec = 1.6f,
+    minWaveRetriggerMs = 390L
+    ),
+
+    EMBER_LINE(
+    displayName = "Ember Line",
+    description = "Molten lines tracing a frame of dark amber.",
+    backgroundDrawableRes = R.drawable.bg_ember_line,
+    thumbnailDrawableRes = R.drawable.bg_ember_line,
+    backgroundFragmentShaderRes = R.raw.bg_large_paint_fragment_shader,
+    rippleFragmentShaderRes = R.raw.ripple_large_paint_fragment_shader,
+    waveBoostScale = 0.32f,
+    minVisibleWaveAmplitude = 0.15f,
+    maxWaveAmplitude = 1.40f,
+    waterPulseDurationSec = 1.9f,
+    minWaveRetriggerMs = 440L
+    ),
+
+    VIRIDIAN_LINE(
+    displayName = "Viridian Line",
+    description = "Green light seeping through layered hull plating.",
+    backgroundDrawableRes = R.drawable.bg_viridian_line,
+    thumbnailDrawableRes = R.drawable.bg_viridian_line,
+    backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+    rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+    waveBoostScale = 0.24f,
+    minVisibleWaveAmplitude = 0.11f,
+    maxWaveAmplitude = 1.10f,
+    waterPulseDurationSec = 1.5f,
+    minWaveRetriggerMs = 420L
     );
 
     companion object {
