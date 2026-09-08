@@ -129,6 +129,34 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.40f,
         waterPulseDurationSec = 2.0f,
         minWaveRetriggerMs = 480L
+    ),
+    
+    VIOLET_VENT(
+        displayName = "Violet Vent",
+        description = "Armored plating breathing violet light through honeycomb vents.",
+        backgroundDrawableRes = R.drawable.bg_violet_vent,
+        thumbnailDrawableRes = R.drawable.bg_violet_vent,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.26f,
+        minVisibleWaveAmplitude = 0.12f,
+        maxWaveAmplitude = 1.20f,
+        waterPulseDurationSec = 1.7f,
+        minWaveRetriggerMs = 400L
+    ),
+
+    MAGENTA_CORE(
+        displayName = "Magenta Core",
+        description = "The exposed circuitry of a machine, glowing magenta.",
+        backgroundDrawableRes = R.drawable.bg_magenta_core,
+        thumbnailDrawableRes = R.drawable.bg_magenta_core,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.30f,
+        minVisibleWaveAmplitude = 0.14f,
+        maxWaveAmplitude = 1.30f,
+        waterPulseDurationSec = 1.5f,
+        minWaveRetriggerMs = 380L
     );
 
     companion object {
