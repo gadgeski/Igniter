@@ -199,6 +199,20 @@ enum class WallpaperTheme(
     maxWaveAmplitude = 1.10f,
     waterPulseDurationSec = 1.5f,
     minWaveRetriggerMs = 420L
+    ),
+
+    IRIS_CORE(
+    displayName = "Iris Core",
+    description = "A monochrome interface ring at the center of the machine.",
+    backgroundDrawableRes = R.drawable.bg_iris_core,
+    thumbnailDrawableRes = R.drawable.bg_iris_core,
+    backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+    rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+    waveBoostScale = 0.22f,
+    minVisibleWaveAmplitude = 0.10f,
+    maxWaveAmplitude = 1.05f,
+    waterPulseDurationSec = 1.4f,
+    minWaveRetriggerMs = 450L
     );
 
     companion object {
