@@ -213,6 +213,20 @@ enum class WallpaperTheme(
     maxWaveAmplitude = 1.05f,
     waterPulseDurationSec = 1.4f,
     minWaveRetriggerMs = 450L
+    ),
+
+    AMBER_IRIS(
+        displayName = "Amber Iris",
+        description = "A luminous interface ring pulsing in amber and lime.",
+        backgroundDrawableRes = R.drawable.bg_amber_iris,
+        thumbnailDrawableRes = R.drawable.bg_amber_iris,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.22f,
+        minVisibleWaveAmplitude = 0.10f,
+        maxWaveAmplitude = 1.05f,
+        waterPulseDurationSec = 1.4f,
+        minWaveRetriggerMs = 450L
     );
 
     companion object {
