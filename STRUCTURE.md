@@ -39,17 +39,23 @@ Igniter/
 │       │   │                       └── Type.kt
 │       │   └── res
 │       │       ├── drawable
+│       │       │   ├── bg_amber_iris.webp
+│       │       │   ├── bg_cobalt_circuit.webp
 │       │       │   ├── bg_cyberpunk.webp
 │       │       │   ├── bg_ember_line.webp
 │       │       │   ├── bg_flower_storm.webp
 │       │       │   ├── bg_ignition_line.webp
+│       │       │   ├── bg_iris_core.webp
 │       │       │   ├── bg_large_paint.webp
+│       │       │   ├── bg_magenta_core.webp
 │       │       │   ├── bg_silent_city.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
 │       │       │   ├── bg_summer_beach.webp
 │       │       │   ├── bg_sunlight_trees.webp
+│       │       │   ├── bg_violet_vent.webp
 │       │       │   ├── bg_viridian_line.webp
+│       │       │   ├── bg_void_hull.webp
 │       │       │   ├── ic_launcher_background.xml
 │       │       │   └── ic_launcher_foreground.xml
 │       │       ├── mipmap-anydpi
@@ -59,22 +65,27 @@ Igniter/
 │       │       ├── mipmap-hdpi
 │       │       │   ├── ic_launcher.webp
 │       │       │   ├── ic_launcher_foreground.webp
+│       │       │   ├── ic_launcher_monochrome.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-mdpi
 │       │       │   ├── ic_launcher.webp
 │       │       │   ├── ic_launcher_foreground.webp
+│       │       │   ├── ic_launcher_monochrome.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-xhdpi
 │       │       │   ├── ic_launcher.webp
 │       │       │   ├── ic_launcher_foreground.webp
+│       │       │   ├── ic_launcher_monochrome.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-xxhdpi
 │       │       │   ├── ic_launcher.webp
 │       │       │   ├── ic_launcher_foreground.webp
+│       │       │   ├── ic_launcher_monochrome.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── mipmap-xxxhdpi
 │       │       │   ├── ic_launcher.webp
 │       │       │   ├── ic_launcher_foreground.webp
+│       │       │   ├── ic_launcher_monochrome.webp
 │       │       │   └── ic_launcher_round.webp
 │       │       ├── raw
 │       │       │   ├── background_vertex_shader.glsl
@@ -118,5 +129,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 81 files
+37 directories, 92 files
 ```
