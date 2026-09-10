@@ -227,6 +227,34 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.05f,
         waterPulseDurationSec = 1.4f,
         minWaveRetriggerMs = 450L
+    ),
+
+    COBALT_CIRCUIT(
+        displayName = "Cobalt Circuit",
+        description = "Layered plating over dense cobalt circuitry.",
+        backgroundDrawableRes = R.drawable.bg_cobalt_circuit,
+        thumbnailDrawableRes = R.drawable.bg_cobalt_circuit,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.28f,
+        minVisibleWaveAmplitude = 0.13f,
+        maxWaveAmplitude = 1.25f,
+        waterPulseDurationSec = 1.6f,
+        minWaveRetriggerMs = 400L
+    ),
+
+    VOID_HULL(
+        displayName = "Void Hull",
+        description = "Unlit plating drifting against distant starlight.",
+        backgroundDrawableRes = R.drawable.bg_void_hull,
+        thumbnailDrawableRes = R.drawable.bg_void_hull,
+        backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.20f,
+        minVisibleWaveAmplitude = 0.09f,
+        maxWaveAmplitude = 0.95f,
+        waterPulseDurationSec = 1.3f,
+        minWaveRetriggerMs = 500L
     );
 
     companion object {
