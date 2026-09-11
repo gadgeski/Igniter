@@ -255,6 +255,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 0.95f,
         waterPulseDurationSec = 1.3f,
         minWaveRetriggerMs = 500L
+    ),
+
+    ASH_CIRCUIT(
+        displayName = "Ash Circuit",
+        description = "Circuit traces drifting through smoke and ash.",
+        backgroundDrawableRes = R.drawable.bg_ash_circuit,
+        thumbnailDrawableRes = R.drawable.bg_ash_circuit,
+        backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_splashing_ink_fragment_shader,
+        waveBoostScale = 0.26f,
+        minVisibleWaveAmplitude = 0.12f,
+        maxWaveAmplitude = 1.20f,
+        waterPulseDurationSec = 1.8f,
+        minWaveRetriggerMs = 430L
     );
 
     companion object {
