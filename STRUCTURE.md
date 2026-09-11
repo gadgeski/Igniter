@@ -40,6 +40,7 @@ Igniter/
 │       │   └── res
 │       │       ├── drawable
 │       │       │   ├── bg_amber_iris.webp
+│       │       │   ├── bg_ash_circuit.webp
 │       │       │   ├── bg_cobalt_circuit.webp
 │       │       │   ├── bg_cyberpunk.webp
 │       │       │   ├── bg_ember_line.webp
@@ -129,5 +130,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 92 files
+37 directories, 93 files
 ```
