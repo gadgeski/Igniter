@@ -39,8 +39,10 @@ Igniter/
 │       │   │                       └── Type.kt
 │       │   └── res
 │       │       ├── drawable
+│       │       │   ├── bg_abyss_tide.webp
 │       │       │   ├── bg_amber_iris.webp
 │       │       │   ├── bg_ash_circuit.webp
+│       │       │   ├── bg_charcoal_drift.webp
 │       │       │   ├── bg_cobalt_circuit.webp
 │       │       │   ├── bg_cyberpunk.webp
 │       │       │   ├── bg_ember_line.webp
@@ -49,6 +51,7 @@ Igniter/
 │       │       │   ├── bg_iris_core.webp
 │       │       │   ├── bg_large_paint.webp
 │       │       │   ├── bg_magenta_core.webp
+│       │       │   ├── bg_night_ascent.webp
 │       │       │   ├── bg_silent_city.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
@@ -130,5 +133,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 93 files
+37 directories, 96 files
 ```
