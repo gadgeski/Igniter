@@ -269,6 +269,48 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.20f,
         waterPulseDurationSec = 1.8f,
         minWaveRetriggerMs = 430L
+    ),
+
+    ABYSS_TIDE(
+        displayName = "Abyss Tide",
+        description = "Faint blue light rising from the bottom of the dark.",
+        backgroundDrawableRes = R.drawable.bg_abyss_tide,
+        thumbnailDrawableRes = R.drawable.bg_abyss_tide,
+        backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
+        waveBoostScale = 0.34f,
+        minVisibleWaveAmplitude = 0.18f,
+        maxWaveAmplitude = 1.50f,
+        waterPulseDurationSec = 2.5f,
+        minWaveRetriggerMs = 520L
+    ),
+
+    NIGHT_ASCENT(
+        displayName = "Night Ascent",
+        description = "A tower vanishing upward into the night haze.",
+        backgroundDrawableRes = R.drawable.bg_night_ascent,
+        thumbnailDrawableRes = R.drawable.bg_night_ascent,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.20f,
+        minVisibleWaveAmplitude = 0.09f,
+        maxWaveAmplitude = 0.95f,
+        waterPulseDurationSec = 1.4f,
+        minWaveRetriggerMs = 550L
+    ),
+
+    CHARCOAL_DRIFT(
+        displayName = "Charcoal Drift",
+        description = "Near-black strands drifting across a grain-lit surface.",
+        backgroundDrawableRes = R.drawable.bg_charcoal_drift,
+        thumbnailDrawableRes = R.drawable.bg_charcoal_drift,
+        backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_splashing_ink_fragment_shader,
+        waveBoostScale = 0.30f,
+        minVisibleWaveAmplitude = 0.15f,
+        maxWaveAmplitude = 1.35f,
+        waterPulseDurationSec = 2.0f,
+        minWaveRetriggerMs = 460L
     );
 
     companion object {
