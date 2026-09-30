@@ -7,20 +7,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -104,53 +104,51 @@ private fun SettingsScreen(
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 16.dp)
+                .selectableGroup(),
+            contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
-        ){
-            Text(
-                text = "Choose a wallpaper theme",
-                style = MaterialTheme.typography.headlineSmall
-            )
+        ) {
+            item {
+                Text(
+                    text = "Choose a wallpaper theme",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
 
-            Text(
-                text = "Your selection is saved immediately and reflected in the live wallpaper.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            item {
+                Text(
+                    text = "Your selection is saved immediately and reflected in the live wallpaper.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.selectableGroup()
-                ) {
-                    WallpaperTheme.entries.forEachIndexed { index, theme ->
-                        ThemeRow(
-                            theme = theme,
-                            selected = selectedTheme == theme,
-                            onClick = {
-                                if (selectedTheme != theme) {
-                                    selectedTheme = theme
-                                    onThemeSelected(theme)
+            items(
+                items = WallpaperTheme.entries,
+                key = { it.name }
+            ) { theme ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    ThemeRow(
+                        theme = theme,
+                        selected = selectedTheme == theme,
+                        onClick = {
+                            if (selectedTheme != theme) {
+                                selectedTheme = theme
+                                onThemeSelected(theme)
 
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            message = "${theme.displayName} applied"
-                                        )
-                                    }
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "${theme.displayName} applied"
+                                    )
                                 }
                             }
-                        )
-
-                        if (index != WallpaperTheme.entries.lastIndex) {
-                            HorizontalDivider()
                         }
-                    }
+                    )
                 }
             }
         }
