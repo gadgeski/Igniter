@@ -149,7 +149,7 @@ enum class WallpaperTheme(
         displayName = "Magenta Core",
         description = "The exposed circuitry of a machine, glowing magenta.",
         backgroundDrawableRes = R.drawable.bg_magenta_core,
-        thumbnailDrawableRes = R.drawable.bg_magenta_core,
+        thumbnailDrawableRes = R.drawable.bg_magenta_core_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.30f,
