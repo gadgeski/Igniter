@@ -311,6 +311,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.35f,
         waterPulseDurationSec = 2.0f,
         minWaveRetriggerMs = 460L
+    ),
+
+    JADE_CONDUIT(
+        displayName = "Jade Conduit",
+        description = "Light bleeding from between armored panels.",
+        backgroundDrawableRes = R.drawable.bg_jade_conduit,
+        thumbnailDrawableRes = R.drawable.bg_jade_conduit_thumb,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.22f,
+        minVisibleWaveAmplitude = 0.10f,
+        maxWaveAmplitude = 1.05f,
+        waterPulseDurationSec = 1.4f,
+        minWaveRetriggerMs = 440L
     );
 
     companion object {
