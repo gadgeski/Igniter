@@ -325,6 +325,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.05f,
         waterPulseDurationSec = 1.4f,
         minWaveRetriggerMs = 440L
+    ),
+
+    CRIMSON_WINDOW(
+        displayName = "Crimson Window",
+        description = "A room facing the last of the sun.",
+        backgroundDrawableRes = R.drawable.bg_crimson_window,
+        thumbnailDrawableRes = R.drawable.bg_crimson_window_thumb,
+        backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
+        waveBoostScale = 0.20f,
+        minVisibleWaveAmplitude = 0.09f,
+        maxWaveAmplitude = 0.95f,
+        waterPulseDurationSec = 1.6f,
+        minWaveRetriggerMs = 560L
     );
 
     companion object {
