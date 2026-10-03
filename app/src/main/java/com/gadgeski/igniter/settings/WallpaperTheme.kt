@@ -37,7 +37,7 @@ enum class WallpaperTheme(
         displayName = "Summer Beach",
         description = "Warm beach atmosphere with soft water motion.",
         backgroundDrawableRes = R.drawable.bg_summer_beach,
-        thumbnailDrawableRes = R.drawable.bg_summer_beach,
+        thumbnailDrawableRes = R.drawable.bg_summer_beach_thumb,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
         waveBoostScale = 0.33f,
