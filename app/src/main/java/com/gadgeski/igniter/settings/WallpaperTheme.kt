@@ -339,6 +339,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 0.95f,
         waterPulseDurationSec = 1.6f,
         minWaveRetriggerMs = 560L
+    ),
+
+    EMPTY_ARENA(
+        displayName = "Empty Arena",
+        description = "A dark venue with its screens still misfiring.",
+        backgroundDrawableRes = R.drawable.bg_empty_arena,
+        thumbnailDrawableRes = R.drawable.bg_empty_arena_thumb,
+        backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        waveBoostScale = 0.20f,
+        minVisibleWaveAmplitude = 0.09f,
+        maxWaveAmplitude = 0.95f,
+        waterPulseDurationSec = 1.4f,
+        minWaveRetriggerMs = 520L
     );
 
     companion object {
