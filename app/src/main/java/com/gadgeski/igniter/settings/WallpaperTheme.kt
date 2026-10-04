@@ -119,9 +119,9 @@ enum class WallpaperTheme(
 
     LARGE_PAINT(
         displayName = "Large Paint",
-        description = "Vivid painted texture with pulsing light and fiery ripple.",
+        description = "Magenta pigment surfacing through heavy dark and dropout.",
         backgroundDrawableRes = R.drawable.bg_large_paint,
-        thumbnailDrawableRes = R.drawable.bg_large_paint,
+        thumbnailDrawableRes = R.drawable.bg_large_paint_thumb,
         backgroundFragmentShaderRes = R.raw.bg_large_paint_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_large_paint_fragment_shader,
         waveBoostScale = 0.30f,
