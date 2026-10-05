@@ -275,7 +275,7 @@ enum class WallpaperTheme(
         displayName = "Abyss Tide",
         description = "Faint blue light rising from the bottom of the dark.",
         backgroundDrawableRes = R.drawable.bg_abyss_tide,
-        thumbnailDrawableRes = R.drawable.bg_abyss_tide,
+        thumbnailDrawableRes = R.drawable.bg_abyss_tide_thumb,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_beach_fragment_shader,
         waveBoostScale = 0.34f,
