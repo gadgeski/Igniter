@@ -163,7 +163,7 @@ enum class WallpaperTheme(
         displayName = "Ignition Line",
         description = "Cyan circuitry running vertical through dark plating.",
         backgroundDrawableRes = R.drawable.bg_ignition_line,
-        thumbnailDrawableRes = R.drawable.bg_ignition_line,
+        thumbnailDrawableRes = R.drawable.bg_ignition_line_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.28f,
