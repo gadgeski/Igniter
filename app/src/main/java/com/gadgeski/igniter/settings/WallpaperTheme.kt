@@ -191,7 +191,7 @@ enum class WallpaperTheme(
         displayName = "Viridian Line",
         description = "Green light seeping through layered hull plating.",
         backgroundDrawableRes = R.drawable.bg_viridian_line,
-        thumbnailDrawableRes = R.drawable.bg_viridian_line,
+        thumbnailDrawableRes = R.drawable.bg_viridian_line_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.24f,
