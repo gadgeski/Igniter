@@ -217,9 +217,9 @@ enum class WallpaperTheme(
 
     AMBER_IRIS(
         displayName = "Amber Iris",
-        description = "A luminous interface ring pulsing in amber and lime.",
+        description = "An amber aperture, holding its light at the core.",
         backgroundDrawableRes = R.drawable.bg_amber_iris,
-        thumbnailDrawableRes = R.drawable.bg_amber_iris,
+        thumbnailDrawableRes = R.drawable.bg_amber_iris_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.22f,
