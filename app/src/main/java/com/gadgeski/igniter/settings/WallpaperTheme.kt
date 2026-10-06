@@ -133,9 +133,9 @@ enum class WallpaperTheme(
 
     VIOLET_VENT(
         displayName = "Violet Vent",
-        description = "Armored plating breathing violet light through honeycomb vents.",
+        description = "Violet light through honeycomb vents, cut by signal loss.",
         backgroundDrawableRes = R.drawable.bg_violet_vent,
-        thumbnailDrawableRes = R.drawable.bg_violet_vent,
+        thumbnailDrawableRes = R.drawable.bg_violet_vent_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.26f,
