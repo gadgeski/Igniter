@@ -40,25 +40,41 @@ Igniter/
 │       │   └── res
 │       │       ├── drawable
 │       │       │   ├── bg_abyss_tide.webp
+│       │       │   ├── bg_abyss_tide_thumb.webp
 │       │       │   ├── bg_amber_iris.webp
+│       │       │   ├── bg_amber_iris_thumb.webp
 │       │       │   ├── bg_ash_circuit.webp
 │       │       │   ├── bg_charcoal_drift.webp
 │       │       │   ├── bg_cobalt_circuit.webp
+│       │       │   ├── bg_crimson_window.webp
+│       │       │   ├── bg_crimson_window_thumb.webp
 │       │       │   ├── bg_cyberpunk.webp
 │       │       │   ├── bg_ember_line.webp
+│       │       │   ├── bg_ember_line_thumb.webp
+│       │       │   ├── bg_empty_arena.webp
+│       │       │   ├── bg_empty_arena_thumb.webp
 │       │       │   ├── bg_flower_storm.webp
 │       │       │   ├── bg_ignition_line.webp
+│       │       │   ├── bg_ignition_line_thumb.webp
 │       │       │   ├── bg_iris_core.webp
+│       │       │   ├── bg_iris_core_thumb.webp
+│       │       │   ├── bg_jade_conduit.webp
+│       │       │   ├── bg_jade_conduit_thumb.webp
 │       │       │   ├── bg_large_paint.webp
+│       │       │   ├── bg_large_paint_thumb.webp
 │       │       │   ├── bg_magenta_core.webp
+│       │       │   ├── bg_magenta_core_thumb.webp
 │       │       │   ├── bg_night_ascent.webp
 │       │       │   ├── bg_silent_city.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
 │       │       │   ├── bg_summer_beach.webp
+│       │       │   ├── bg_summer_beach_thumb.webp
 │       │       │   ├── bg_sunlight_trees.webp
 │       │       │   ├── bg_violet_vent.webp
+│       │       │   ├── bg_violet_vent_thumb.webp
 │       │       │   ├── bg_viridian_line.webp
+│       │       │   ├── bg_viridian_line_thumb.webp
 │       │       │   ├── bg_void_hull.webp
 │       │       │   ├── ic_launcher_background.xml
 │       │       │   └── ic_launcher_foreground.xml
@@ -133,5 +149,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 96 files
+37 directories, 112 files
 ```
