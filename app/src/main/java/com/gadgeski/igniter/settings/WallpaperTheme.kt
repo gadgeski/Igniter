@@ -63,9 +63,9 @@ enum class WallpaperTheme(
 
     SILENT_CITY(
         displayName = "Silent City",
-        description = "Quiet urban mood with calm, restrained motion.",
+        description = "A violet sky over a wet street, the city holding its breath.",
         backgroundDrawableRes = R.drawable.bg_silent_city,
-        thumbnailDrawableRes = R.drawable.bg_silent_city,
+        thumbnailDrawableRes = R.drawable.bg_silent_city_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.22f,
