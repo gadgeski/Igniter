@@ -289,7 +289,7 @@ enum class WallpaperTheme(
         displayName = "Night Ascent",
         description = "A tower vanishing upward into the night haze.",
         backgroundDrawableRes = R.drawable.bg_night_ascent,
-        thumbnailDrawableRes = R.drawable.bg_night_ascent,
+        thumbnailDrawableRes = R.drawable.bg_night_ascent_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.20f,
