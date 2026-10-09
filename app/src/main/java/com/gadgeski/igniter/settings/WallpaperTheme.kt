@@ -91,9 +91,9 @@ enum class WallpaperTheme(
 
     SUNLIGHT_TREES(
         displayName = "Sunlight Trees",
-        description = "Dappled light through the leaves with a warm, glowing feel.",
+        description = "Daylight through leaves, blown out past what the screen can hold.",
         backgroundDrawableRes = R.drawable.bg_sunlight_trees,
-        thumbnailDrawableRes = R.drawable.bg_sunlight_trees,
+        thumbnailDrawableRes = R.drawable.bg_sunlight_trees_thumb,
         backgroundFragmentShaderRes = R.raw.bg_sunlight_trees_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_sunlight_trees_fragment_shader,
         waveBoostScale = 0.26f,
