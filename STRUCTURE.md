@@ -54,6 +54,7 @@ Igniter/
 │       │       │   ├── bg_empty_arena.webp
 │       │       │   ├── bg_empty_arena_thumb.webp
 │       │       │   ├── bg_flower_storm.webp
+│       │       │   ├── bg_flower_storm_thumb.webp
 │       │       │   ├── bg_ignition_line.webp
 │       │       │   ├── bg_ignition_line_thumb.webp
 │       │       │   ├── bg_iris_core.webp
@@ -64,13 +65,18 @@ Igniter/
 │       │       │   ├── bg_large_paint_thumb.webp
 │       │       │   ├── bg_magenta_core.webp
 │       │       │   ├── bg_magenta_core_thumb.webp
+│       │       │   ├── bg_morning_room.webp
+│       │       │   ├── bg_morning_room_thumb.webp
 │       │       │   ├── bg_night_ascent.webp
+│       │       │   ├── bg_night_ascent_thumb.webp
 │       │       │   ├── bg_silent_city.webp
+│       │       │   ├── bg_silent_city_thumb.webp
 │       │       │   ├── bg_sparkling_sky.webp
 │       │       │   ├── bg_splashing_ink.webp
 │       │       │   ├── bg_summer_beach.webp
 │       │       │   ├── bg_summer_beach_thumb.webp
 │       │       │   ├── bg_sunlight_trees.webp
+│       │       │   ├── bg_sunlight_trees_thumb.webp
 │       │       │   ├── bg_violet_vent.webp
 │       │       │   ├── bg_violet_vent_thumb.webp
 │       │       │   ├── bg_viridian_line.webp
@@ -149,5 +155,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 112 files
+37 directories, 118 files
 ```
