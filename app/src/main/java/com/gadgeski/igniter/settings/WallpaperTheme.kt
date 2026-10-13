@@ -353,6 +353,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 0.95f,
         waterPulseDurationSec = 1.4f,
         minWaveRetriggerMs = 520L
+    ),
+
+    BULKHEAD_FROST(
+        displayName = "Bulkhead Frost",
+        description = "A sealed bulkhead that vents cold white light on unlock.",
+        backgroundDrawableRes = R.drawable.bg_bulkhead_frost,
+        thumbnailDrawableRes = R.drawable.bg_bulkhead_frost_thumb,
+        backgroundFragmentShaderRes = R.raw.bg_bulkhead_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_bulkhead_fragment_shader,
+        waveBoostScale = 0.22f,
+        minVisibleWaveAmplitude = 0.10f,
+        maxWaveAmplitude = 1.05f,
+        waterPulseDurationSec = 1.4f,
+        minWaveRetriggerMs = 450L
     );
 
     companion object {
