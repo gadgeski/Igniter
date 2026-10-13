@@ -31,6 +31,10 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         private const val VERTEX_STRIDE = COORDS_PER_VERTEX * 4
         private const val RIPPLE_DURATION = 2.0f
         private const val WATER_MOTION_THRESHOLD = 0.05f
+
+        // bg_bulkhead_fragment_shader.glsl の T_DECAY_END と一致させる
+        private const val SHUTTER_DURATION_SEC = 2.2f
+        private const val SHUTTER_IDLE = -1f
     }
 
     // --- 背景シェーダー location キャッシュ ---
@@ -42,6 +46,8 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var bgPosLoc = -1
     private var bgUvLoc = -1
     private var bgTextureLoc = -1
+    private var bgResolutionLoc = -1
+    private var uShutterTimeLocation = -1
 
     // --- 波紋シェーダー location キャッシュ ---
     private var ripplePosLoc = -1
@@ -96,6 +102,9 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private var isWaterPulseActive = false
     private var waterPulseStartMs = -1L
     private var lastWaveTriggerMs = -1L
+
+    // --- シャッター状態（GLスレッド専用） ---
+    private var shutterStartMs = -1L
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         Log.d(TAG, "onSurfaceCreated")
@@ -210,6 +219,14 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
             GLES20.glUniform1f(uEnableWaterMotionLocation, if (enabled) 1f else 0f)
         }
 
+        if (bgResolutionLoc >= 0) {
+            GLES20.glUniform2f(bgResolutionLoc, screenWidth, screenHeight)
+        }
+
+        if (uShutterTimeLocation >= 0) {
+            GLES20.glUniform1f(uShutterTimeLocation, currentShutterTime())
+        }
+
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
         GLES20.glDisableVertexAttribArray(bgPosLoc)
@@ -292,6 +309,9 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         bgPosLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_Position")
         bgUvLoc = GLES20.glGetAttribLocation(backgroundProgram, "a_TexCoord")
         bgTextureLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Texture")
+        bgResolutionLoc = GLES20.glGetUniformLocation(backgroundProgram, "u_Resolution")
+        // u_ShutterTime を宣言しているシェーダーだけがシャッター対応テーマになる
+        uShutterTimeLocation = GLES20.glGetUniformLocation(backgroundProgram, "u_ShutterTime")
 
         ripplePosLoc = GLES20.glGetAttribLocation(rippleProgram, "a_Position")
         rippleUvLoc = GLES20.glGetAttribLocation(rippleProgram, "a_TexCoord")
@@ -333,6 +353,23 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         isWaterPulseActive = true
     }
 
+    /** 現在のテーマがシャッター非対応なら何もしない。 */
+    fun startShutter() {
+        if (uShutterTimeLocation < 0) return
+        shutterStartMs = SystemClock.elapsedRealtime()
+    }
+
+    private fun currentShutterTime(): Float {
+        if (shutterStartMs < 0L) return SHUTTER_IDLE
+
+        val elapsed = (SystemClock.elapsedRealtime() - shutterStartMs) / 1000f
+        if (elapsed > SHUTTER_DURATION_SEC) {
+            shutterStartMs = -1L
+            return SHUTTER_IDLE
+        }
+        return elapsed
+    }
+
     fun updateTilt(x: Float, y: Float) {
         tiltX = x
         tiltY = y
@@ -367,6 +404,9 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         bgPosLoc = -1
         bgUvLoc = -1
         bgTextureLoc = -1
+        bgResolutionLoc = -1
+        uShutterTimeLocation = -1
+        shutterStartMs = -1L
 
         ripplePosLoc = -1
         rippleUvLoc = -1

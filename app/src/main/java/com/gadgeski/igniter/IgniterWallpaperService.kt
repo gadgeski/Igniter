@@ -1,5 +1,9 @@
 package com.gadgeski.igniter
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -10,6 +14,7 @@ import android.service.wallpaper.WallpaperService
 import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
+import androidx.core.content.ContextCompat
 import com.gadgeski.igniter.opengl.EglHelper
 import com.gadgeski.igniter.renderer.IgniterRenderer
 import com.gadgeski.igniter.settings.WallpaperTheme
@@ -25,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
 import kotlin.math.hypot
+import kotlin.time.Duration.Companion.milliseconds
 
 @AndroidEntryPoint
 class IgniterWallpaperService : WallpaperService() {
@@ -58,6 +64,10 @@ class IgniterWallpaperService : WallpaperService() {
 
         // センサー由来の波トリガーを連打しすぎないためのクールダウン
         private const val SENSOR_WAVE_COOLDOWN_MS = 650L
+
+        // 解錠直後にアプリへ遷移した場合など、壁紙が見えないまま古い要求が残って
+        // 後でホームに戻った瞬間に誤発火しないよう、要求に寿命を持たせる
+        private const val SHUTTER_REQUEST_TTL_MS = 1_000L
     }
 
     override fun onCreate() {
@@ -122,6 +132,15 @@ class IgniterWallpaperService : WallpaperService() {
         private var pendingTouchY = 0f
         private var hasPendingTouch = false
         private var pendingWaveMomentum = 0f
+        private var pendingShutterRequestMs = -1L
+
+        private val unlockReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == Intent.ACTION_USER_PRESENT) {
+                    requestShutter()
+                }
+            }
+        }
 
         @Volatile
         private var lastInteractionMs = 0L
@@ -160,6 +179,16 @@ class IgniterWallpaperService : WallpaperService() {
 
             sensorManager = getSystemService(SENSOR_SERVICE) as? SensorManager
             accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+            // プレビューは解錠と無関係なので、表示のたびに再生する（onVisibilityChanged 側）
+            if (!isPreview) {
+                ContextCompat.registerReceiver(
+                    applicationContext,
+                    unlockReceiver,
+                    IntentFilter(Intent.ACTION_USER_PRESENT),
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+                )
+            }
         }
 
         override fun onSurfaceCreated(holder: SurfaceHolder?) {
@@ -246,6 +275,10 @@ class IgniterWallpaperService : WallpaperService() {
                 lastWaveEmissionMs = 0L
                 lastLoggedFrameMs = -1L
 
+                if (isPreview) {
+                    requestShutter()
+                }
+
                 if (surfaceReady && eglHelper.isReady) {
                     startDrawingLoop()
                 }
@@ -261,6 +294,10 @@ class IgniterWallpaperService : WallpaperService() {
 
             prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
             sensorManager?.unregisterListener(this)
+
+            if (!isPreview) {
+                applicationContext.unregisterReceiver(unlockReceiver)
+            }
 
             stopDrawingLoop()
             surfaceReady = false
@@ -358,7 +395,7 @@ class IgniterWallpaperService : WallpaperService() {
 
                     val frameElapsedMs = SystemClock.elapsedRealtime() - frameStartMs
                     val sleepMs = (targetFrameMs - frameElapsedMs).coerceAtLeast(0L)
-                    delay(sleepMs)
+                    delay(sleepMs.milliseconds)
                 }
             }
         }
@@ -406,8 +443,14 @@ class IgniterWallpaperService : WallpaperService() {
             var localTouchX = 0f
             var localTouchY = 0f
             var localWaveMomentum = 0f
+            var localShutterRequestMs = -1L
 
             synchronized(pendingStateLock) {
+                if (pendingShutterRequestMs >= 0L) {
+                    localShutterRequestMs = pendingShutterRequestMs
+                    pendingShutterRequestMs = -1L
+                }
+
                 if (hasPendingTouch) {
                     localHasTouch = true
                     localTouchX = pendingTouchX
@@ -428,6 +471,21 @@ class IgniterWallpaperService : WallpaperService() {
             if (localWaveMomentum > 0f) {
                 renderer.addWaveMomentum(localWaveMomentum)
             }
+
+            if (localShutterRequestMs >= 0L &&
+                SystemClock.elapsedRealtime() - localShutterRequestMs <= SHUTTER_REQUEST_TTL_MS
+            ) {
+                renderer.startShutter()
+            }
+        }
+
+        private fun requestShutter() {
+            val nowMs = SystemClock.elapsedRealtime()
+            synchronized(pendingStateLock) {
+                pendingShutterRequestMs = nowMs
+            }
+            // シーケンス全体を ACTIVE (60fps) で描くため
+            lastInteractionMs = nowMs
         }
 
         private fun drawFrame() {
@@ -457,6 +515,7 @@ class IgniterWallpaperService : WallpaperService() {
                 pendingTouchY = 0f
                 hasPendingTouch = false
                 pendingWaveMomentum = 0f
+                pendingShutterRequestMs = -1L
             }
         }
     }
