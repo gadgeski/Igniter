@@ -245,11 +245,11 @@ enum class WallpaperTheme(
 
     VOID_HULL(
         displayName = "Void Hull",
-        description = "Unlit plating drifting against distant starlight.",
+        description = "Bare plating catching light from somewhere above.",
         backgroundDrawableRes = R.drawable.bg_void_hull,
-        thumbnailDrawableRes = R.drawable.bg_void_hull,
-        backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
-        rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
+        thumbnailDrawableRes = R.drawable.bg_void_hull_thumb,
+        backgroundFragmentShaderRes = R.raw.bg_void_hull_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_void_hull_fragment_shader,
         waveBoostScale = 0.20f,
         minVisibleWaveAmplitude = 0.09f,
         maxWaveAmplitude = 0.95f,
