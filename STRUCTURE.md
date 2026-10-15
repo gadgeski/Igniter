@@ -84,6 +84,7 @@ Igniter/
 │       │       │   ├── bg_viridian_line.webp
 │       │       │   ├── bg_viridian_line_thumb.webp
 │       │       │   ├── bg_void_hull.webp
+│       │       │   ├── bg_void_hull_thumb.webp
 │       │       │   ├── ic_launcher_background.xml
 │       │       │   └── ic_launcher_foreground.xml
 │       │       ├── mipmap-anydpi
@@ -124,6 +125,7 @@ Igniter/
 │       │       │   ├── bg_large_paint_fragment_shader.glsl
 │       │       │   ├── bg_splashing_ink_fragment_shader.glsl
 │       │       │   ├── bg_sunlight_trees_fragment_shader.glsl
+│       │       │   ├── bg_void_hull_fragment_shader.glsl
 │       │       │   ├── ripple_beach_fragment_shader.glsl
 │       │       │   ├── ripple_bulkhead_fragment_shader.glsl
 │       │       │   ├── ripple_cyberpunk_fragment_shader.glsl
@@ -132,7 +134,8 @@ Igniter/
 │       │       │   ├── ripple_sparkling_sky_fragment_shader.glsl
 │       │       │   ├── ripple_splashing_ink_fragment_shader.glsl
 │       │       │   ├── ripple_sunlight_trees_fragment_shader.glsl
-│       │       │   └── ripple_vertex_shader.glsl
+│       │       │   ├── ripple_vertex_shader.glsl
+│       │       │   └── ripple_void_hull_fragment_shader.glsl
 │       │       ├── values
 │       │       │   ├── colors.xml
 │       │       │   ├── strings.xml
@@ -159,5 +162,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 122 files
+37 directories, 125 files
 ```
