@@ -261,7 +261,7 @@ enum class WallpaperTheme(
         displayName = "Ash Circuit",
         description = "Circuit traces drifting through smoke and ash.",
         backgroundDrawableRes = R.drawable.bg_ash_circuit,
-        thumbnailDrawableRes = R.drawable.bg_ash_circuit,
+        thumbnailDrawableRes = R.drawable.bg_ash_circuit_thumb,
         backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_splashing_ink_fragment_shader,
         waveBoostScale = 0.26f,
