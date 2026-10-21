@@ -76,6 +76,11 @@ Igniter は「背景テクスチャ1枚 × 背景シェーダー × 波紋シェ
 - シーケンス長は `IgniterRenderer.SHUTTER_DURATION_SEC` とシェーダー側 `T_DECAY_END` を**必ず一致させる**。
 - 実装例: `bg_bulkhead_fragment_shader.glsl`（BULKHEAD_FROST）
 
+### E. テーマ専用シェーダー
+
+- `bg_haze_fragment_shader.glsl` は CYBERPUNK 専用。明るく暖かい空だけを抽出するマスク（輝度・暖色・縦位置）をこの画像に合わせて作り込んでいるため、他テーマに流用しない。寒色のテーマでは何も起きず、暖色の発光ラインでは線が揺らいで見える。
+- `bg_bulkhead_fragment_shader.glsl` も同様に BULKHEAD_FROST 専用（継ぎ目の位置が画像の構図に依存）。
+
 ---
 
 ## 4. Design Rules (Cyberpunk Heavy)
@@ -109,7 +114,7 @@ Igniter は「背景テクスチャ1枚 × 背景シェーダー × 波紋シェ
 
 - 背景: `res/drawable/bg_<name>.webp`、サムネイル: `bg_<name>_thumb.webp`。`<name>` は enum 名の小文字スネークケース。
 - **全テーマに専用サムネイルを用意する。** 本体画像を流用すると、一覧表示のたびにフルサイズをデコードする。
-  - 未対応（本体流用中）: CYBERPUNK, SPARKLING_SKY, SPLASHING_INK, COBALT_CIRCUIT, CHARCOAL_DRIFT
+  - 未対応（本体流用中）: SPARKLING_SKY, SPLASHING_INK, COBALT_CIRCUIT, CHARCOAL_DRIFT
 - 背景シェーダーは UV を `UV_MARGIN` 分だけ内側でサンプリングし、パララックスで端が引き伸ばされないようにする。
 
 ---
