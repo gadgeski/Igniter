@@ -44,6 +44,7 @@ Igniter/
 │       │       │   ├── bg_amber_iris.webp
 │       │       │   ├── bg_amber_iris_thumb.webp
 │       │       │   ├── bg_ash_circuit.webp
+│       │       │   ├── bg_ash_circuit_thumb.webp
 │       │       │   ├── bg_bulkhead_frost.webp
 │       │       │   ├── bg_bulkhead_frost_thumb.webp
 │       │       │   ├── bg_charcoal_drift.webp
@@ -51,6 +52,7 @@ Igniter/
 │       │       │   ├── bg_crimson_window.webp
 │       │       │   ├── bg_crimson_window_thumb.webp
 │       │       │   ├── bg_cyberpunk.webp
+│       │       │   ├── bg_cyberpunk_thumb.webp
 │       │       │   ├── bg_ember_line.webp
 │       │       │   ├── bg_ember_line_thumb.webp
 │       │       │   ├── bg_empty_arena.webp
@@ -122,6 +124,7 @@ Igniter/
 │       │       │   ├── bg_bulkhead_fragment_shader.glsl
 │       │       │   ├── bg_cyberpunk_fragment_shader.glsl
 │       │       │   ├── bg_flower_storm_fragment_shader.glsl
+│       │       │   ├── bg_haze_fragment_shader.glsl
 │       │       │   ├── bg_large_paint_fragment_shader.glsl
 │       │       │   ├── bg_splashing_ink_fragment_shader.glsl
 │       │       │   ├── bg_sunlight_trees_fragment_shader.glsl
@@ -162,5 +165,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 125 files
+37 directories, 128 files
 ```
