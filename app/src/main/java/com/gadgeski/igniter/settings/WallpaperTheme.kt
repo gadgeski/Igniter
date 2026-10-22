@@ -77,9 +77,9 @@ enum class WallpaperTheme(
 
     SPARKLING_SKY(
         displayName = "Sparkling Sky",
-        description = "Light, airy sky scene with subtle shimmer.",
+        description = "Clouds breaking the light into grain.",
         backgroundDrawableRes = R.drawable.bg_sparkling_sky,
-        thumbnailDrawableRes = R.drawable.bg_sparkling_sky,
+        thumbnailDrawableRes = R.drawable.bg_sparkling_sky_thumb,
         backgroundFragmentShaderRes = R.raw.bg_beach_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_sparkling_sky_fragment_shader,
         waveBoostScale = 0.24f,
