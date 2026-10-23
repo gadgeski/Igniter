@@ -233,7 +233,7 @@ enum class WallpaperTheme(
         displayName = "Cobalt Circuit",
         description = "Layered plating over dense cobalt circuitry.",
         backgroundDrawableRes = R.drawable.bg_cobalt_circuit,
-        thumbnailDrawableRes = R.drawable.bg_cobalt_circuit,
+        thumbnailDrawableRes = R.drawable.bg_cobalt_circuit_thumb,
         backgroundFragmentShaderRes = R.raw.bg_cyberpunk_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_cyberpunk_fragment_shader,
         waveBoostScale = 0.28f,
