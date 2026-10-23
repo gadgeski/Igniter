@@ -114,7 +114,7 @@ Igniter は「背景テクスチャ1枚 × 背景シェーダー × 波紋シェ
 
 - 背景: `res/drawable/bg_<name>.webp`、サムネイル: `bg_<name>_thumb.webp`。`<name>` は enum 名の小文字スネークケース。
 - **全テーマに専用サムネイルを用意する。** 本体画像を流用すると、一覧表示のたびにフルサイズをデコードする。
-  - 未対応（本体流用中）: SPLASHING_INK, COBALT_CIRCUIT, CHARCOAL_DRIFT
+  - 未対応（本体流用中）: COBALT_CIRCUIT, CHARCOAL_DRIFT
 - 背景シェーダーは UV を `UV_MARGIN` 分だけ内側でサンプリングし、パララックスで端が引き伸ばされないようにする。
 
 ---
