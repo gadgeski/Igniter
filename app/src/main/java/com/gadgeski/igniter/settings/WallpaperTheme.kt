@@ -105,9 +105,9 @@ enum class WallpaperTheme(
 
     SPLASHING_INK(
         displayName = "Splashing Ink",
-        description = "Abstract ink explosion with glitch and deep purple ripple.",
+        description = "Rust-colored strokes caught mid-splash.",
         backgroundDrawableRes = R.drawable.bg_splashing_ink,
-        thumbnailDrawableRes = R.drawable.bg_splashing_ink,
+        thumbnailDrawableRes = R.drawable.bg_splashing_ink_thumb,
         backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
         rippleFragmentShaderRes = R.raw.ripple_splashing_ink_fragment_shader,
         waveBoostScale = 0.35f,
