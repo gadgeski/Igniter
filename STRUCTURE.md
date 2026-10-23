@@ -49,6 +49,7 @@ Igniter/
 │       │       │   ├── bg_bulkhead_frost_thumb.webp
 │       │       │   ├── bg_charcoal_drift.webp
 │       │       │   ├── bg_cobalt_circuit.webp
+│       │       │   ├── bg_cobalt_circuit_thumb.webp
 │       │       │   ├── bg_crimson_window.webp
 │       │       │   ├── bg_crimson_window_thumb.webp
 │       │       │   ├── bg_cyberpunk.webp
@@ -76,7 +77,9 @@ Igniter/
 │       │       │   ├── bg_silent_city.webp
 │       │       │   ├── bg_silent_city_thumb.webp
 │       │       │   ├── bg_sparkling_sky.webp
+│       │       │   ├── bg_sparkling_sky_thumb.webp
 │       │       │   ├── bg_splashing_ink.webp
+│       │       │   ├── bg_splashing_ink_thumb.webp
 │       │       │   ├── bg_summer_beach.webp
 │       │       │   ├── bg_summer_beach_thumb.webp
 │       │       │   ├── bg_sunlight_trees.webp
@@ -165,5 +168,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 128 files
+37 directories, 131 files
 ```
