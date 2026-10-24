@@ -48,6 +48,7 @@ Igniter/
 │       │       │   ├── bg_bulkhead_frost.webp
 │       │       │   ├── bg_bulkhead_frost_thumb.webp
 │       │       │   ├── bg_charcoal_drift.webp
+│       │       │   ├── bg_charcoal_drift_thumb.webp
 │       │       │   ├── bg_cobalt_circuit.webp
 │       │       │   ├── bg_cobalt_circuit_thumb.webp
 │       │       │   ├── bg_crimson_window.webp
@@ -168,5 +169,5 @@ Igniter/
 ├── local.properties
 └── settings.gradle.kts
 
-37 directories, 131 files
+37 directories, 132 files
 ```
