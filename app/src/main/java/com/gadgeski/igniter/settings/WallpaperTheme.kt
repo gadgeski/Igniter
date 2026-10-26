@@ -49,7 +49,7 @@ enum class WallpaperTheme(
 
     FLOWER_STORM(
         displayName = "Flower Storm",
-        description = "Floral energy with a gentle flowing feel.",
+        description = "Petals falling through a corrupted magenta dusk.",
         backgroundDrawableRes = R.drawable.bg_flower_storm,
         thumbnailDrawableRes = R.drawable.bg_flower_storm_thumb,
         backgroundFragmentShaderRes = R.raw.bg_flower_storm_fragment_shader,
