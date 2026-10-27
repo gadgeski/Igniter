@@ -367,6 +367,20 @@ enum class WallpaperTheme(
         maxWaveAmplitude = 1.05f,
         waterPulseDurationSec = 1.4f,
         minWaveRetriggerMs = 450L
+    ),
+
+    MORNING_ROOM(
+        displayName = "Morning Room",
+        description = "A sunlit room, seen through a feed that keeps losing signal.",
+        backgroundDrawableRes = R.drawable.bg_morning_room,
+        thumbnailDrawableRes = R.drawable.bg_morning_room_thumb,
+        backgroundFragmentShaderRes = R.raw.bg_splashing_ink_fragment_shader,
+        rippleFragmentShaderRes = R.raw.ripple_sunlight_trees_fragment_shader,
+        waveBoostScale = 0.24f,
+        minVisibleWaveAmplitude = 0.11f,
+        maxWaveAmplitude = 1.10f,
+        waterPulseDurationSec = 1.6f,
+        minWaveRetriggerMs = 480L
     );
 
     companion object {
