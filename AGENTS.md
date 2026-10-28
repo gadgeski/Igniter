@@ -74,12 +74,13 @@ Igniter は「背景テクスチャ1枚 × 背景シェーダー × 波紋シェ
 - 要求は `SHUTTER_REQUEST_TTL_MS` で失効させる（解錠後にアプリへ遷移し、後でホームに戻った瞬間に誤再生しないため）。
 - プレビュー (`isPreview`) は解錠を受け取れないため、表示のたびに再生する。
 - シーケンス長は `IgniterRenderer.SHUTTER_DURATION_SEC` とシェーダー側 `T_DECAY_END` を**必ず一致させる**。
-- 実装例: `bg_bulkhead_fragment_shader.glsl`（BULKHEAD_FROST）
+- 実装例: `bg_bulkhead_fragment_shader.glsl`（BULKHEAD_FROST）、`bg_void_hull_fragment_shader.glsl`（VOID_HULL）
 
 ### E. テーマ専用シェーダー
 
 - `bg_haze_fragment_shader.glsl` は CYBERPUNK 専用。明るく暖かい空だけを抽出するマスク（輝度・暖色・縦位置）をこの画像に合わせて作り込んでいるため、他テーマに流用しない。寒色のテーマでは何も起きず、暖色の発光ラインでは線が揺らいで見える。
 - `bg_bulkhead_fragment_shader.glsl` も同様に BULKHEAD_FROST 専用（継ぎ目の位置が画像の構図に依存）。
+- `bg_void_hull_fragment_shader.glsl` / `ripple_void_hull_fragment_shader.glsl` は VOID_HULL 専用（金属反射の疑似法線を画像に合わせて調整している）。
 
 ---
 
@@ -94,8 +95,15 @@ Igniter は「背景テクスチャ1枚 × 背景シェーダー × 波紋シェ
 ### Color Balance（テーマ追加・改修時に必ず確認）
 
 - 大半のテーマは「黒地に高彩度のアクセント色」という同じ構造。新テーマは**色相だけでなく彩度帯・光り方**で差をつける。
-- **飽和している帯域:** オレンジ〜アンバー（AMBER_IRIS, IGNITION_LINE, EMBER_LINE, CRIMSON_WINDOW）、紫〜マゼンタ（MAGENTA_CORE, VIOLET_VENT, IRIS_CORE）。新規追加せず、作りたくなったら既存テーマの改修に回す。
-- **価値のある帯域:** 白〜青白い無彩色の発光（BULKHEAD_FROST）、発光ではなく反射で見せる金属（VOID_HULL）。
+- **新規テーマでは使わない帯域（原則 NG）:** 下記は既存テーマで埋まっている。作りたくなったら既存テーマの改修に回す。
+  - オレンジ〜アンバー: AMBER_IRIS, EMBER_LINE, CRIMSON_WINDOW など
+  - 紫〜マゼンタ: MAGENTA_CORE, VIOLET_VENT, IRIS_CORE, SILENT_CITY, FLOWER_STORM など
+  - 青: COBALT_CIRCUIT, ABYSS_TIDE, SPARKLING_SKY など
+- **埋まりつつある帯域:** 無彩色（BULKHEAD_FROST の発光、VOID_HULL の金属反射、ASH_CIRCUIT の煙、CHARCOAL_DRIFT の墨）。追加するなら見せ方が既存と重ならないこと。
+- **まだ空いている帯域:**
+  - 黄（レモン寄り。アンバーに寄せない）: MORNING_ROOM のみ
+  - 赤・錆の赤茶（単色の赤色灯、酸化した鉄など）: SPLASHING_INK のみ
+  - くすんだ緑・土の色（緑青、オリーブ、カーキ）: 未使用。発光する緑（VIRIDIAN_LINE, JADE_CONDUIT）とは別物として扱う
 - 波紋の色はテーマの光の温度に合わせる。冷たい光のテーマに標準のオレンジ波紋を流用しない。
 
 ### Overlay Effects（走査線・グリッチ・デジタルの雨など）
@@ -117,6 +125,9 @@ Igniter は「背景テクスチャ1枚 × 背景シェーダー × 波紋シェ
 - **全テーマに専用サムネイルを用意する。** 本体画像を流用すると、一覧表示のたびにフルサイズをデコードする。
   - 未対応（本体流用中）: CHARCOAL_DRIFT
 - 背景シェーダーは UV を `UV_MARGIN` 分だけ内側でサンプリングし、パララックスで端が引き伸ばされないようにする。
+- 素材の基準サイズ: 本体 1400×3100、サムネイル 298×660。
+- **質感の統一:** 改修時は共通のノイズ画像を**ソフトライト**で重ねてから WebP に書き出す。合成モードは固定し、不透明度だけを 20〜40% の範囲で、テーマ間の見た目の粒子感がそろうように調整する（ノイズ画像は編集ソフトの元ファイル側で管理）。
+- 素材は実機でアイコンを並べて確認してからコミットする（下3分の1・ラベルの視認性、サムネイル一覧での見分け）。
 
 ---
 
