@@ -370,6 +370,20 @@ class IgniterRenderer(private val context: Context) : GLSurfaceView.Renderer {
         return elapsed
     }
 
+    /**
+     * 毎フレーム描き直す必要があるかを返す。false の間は、Service が描画を止めて最後の絵を保持してよい。
+     *
+     * u_Time は、シェーダーが実際に使っている場合だけ location が取れる（使われていない uniform は
+     * コンパイラが削除し -1 を返す）。そのため、テーマ側にフラグを持たせなくても
+     * 「時間で動き続けるシェーダーか」を判定できる（AGENTS.md 3章C の Opt-in Uniform 方式）。
+     * 古いドライバが未使用 uniform を残した場合は true になり、従来どおり描き続けるだけで安全側に倒れる。
+     */
+    fun needsContinuousFrames(): Boolean =
+        uTimeLocation >= 0 ||
+                isRippleActive ||
+                isWaterPulseActive ||
+                shutterStartMs >= 0L
+
     fun updateTilt(x: Float, y: Float) {
         tiltX = x
         tiltY = y

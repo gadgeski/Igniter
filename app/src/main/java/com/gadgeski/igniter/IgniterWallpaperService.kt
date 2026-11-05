@@ -29,6 +29,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
+import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -68,6 +69,16 @@ class IgniterWallpaperService : WallpaperService() {
         // 解錠直後にアプリへ遷移した場合など、壁紙が見えないまま古い要求が残って
         // 後でホームに戻った瞬間に誤発火しないよう、要求に寿命を持たせる
         private const val SHUTTER_REQUEST_TTL_MS = 1_000L
+
+        // 静止テーマで描画を止めている間に、入力を確認しに行く間隔
+        private const val STATIC_HOLD_POLL_MS = DEEP_IDLE_FRAME_MS
+
+        // 静止テーマで描き直すほどの傾きの変化（ローパス後の加速度, m/s^2）。
+        // パララックス係数から換算すると 1px 未満の移動で、手ブレ程度では描き直さない
+        private const val TILT_REDRAW_EPSILON = 0.1f
+
+        // ログ用: 描画を止めて最後の絵を保持している状態
+        private const val STATIC_HOLD_MODE_KEY = 0L
     }
 
     override fun onCreate() {
@@ -145,6 +156,16 @@ class IgniterWallpaperService : WallpaperService() {
         @Volatile
         private var lastInteractionMs = 0L
 
+        // テーマ切り替えやサーフェスの作り直しなど、入力がなくても1回は描き直すべき時に立てる
+        @Volatile
+        private var redrawRequested = true
+
+        // Renderer に最後に渡した傾きと、最後に実際に描画したときの傾き（GLスレッド専用）
+        private var lastAppliedTiltX = 0f
+        private var lastAppliedTiltY = 0f
+        private var lastDrawnTiltX = 0f
+        private var lastDrawnTiltY = 0f
+
         // 検証用: fpsモード切り替えログ
         private var lastLoggedFrameMs = -1L
 
@@ -163,6 +184,7 @@ class IgniterWallpaperService : WallpaperService() {
                     scope.launch {
                         if (surfaceReady && eglHelper.isReady) {
                             renderer.setTheme(theme)
+                            redrawRequested = true
                             lastInteractionMs = SystemClock.elapsedRealtime()
                         }
                     }
@@ -218,6 +240,7 @@ class IgniterWallpaperService : WallpaperService() {
                 renderer.onSurfaceChanged(null, size.width(), size.height())
 
                 surfaceReady = true
+                redrawRequested = true
                 lastInteractionMs = SystemClock.elapsedRealtime()
                 lastLoggedFrameMs = -1L
                 Log.d(TAG, "GL surface ready")
@@ -240,9 +263,16 @@ class IgniterWallpaperService : WallpaperService() {
             scope.launch {
                 if (surfaceReady && eglHelper.isReady) {
                     renderer.onSurfaceChanged(null, width, height)
+                    redrawRequested = true
                     lastInteractionMs = SystemClock.elapsedRealtime()
                 }
             }
+        }
+
+        // 構成の変化などでシステムが描き直しを求めたとき。静止テーマで描画を止めていても応じる
+        override fun onSurfaceRedrawNeeded(holder: SurfaceHolder?) {
+            super.onSurfaceRedrawNeeded(holder)
+            redrawRequested = true
         }
 
         override fun onSurfaceDestroyed(holder: SurfaceHolder?) {
@@ -274,6 +304,7 @@ class IgniterWallpaperService : WallpaperService() {
                 lastInteractionMs = SystemClock.elapsedRealtime()
                 lastWaveEmissionMs = 0L
                 lastLoggedFrameMs = -1L
+                redrawRequested = true
 
                 if (isPreview) {
                     requestShutter()
@@ -380,18 +411,31 @@ class IgniterWallpaperService : WallpaperService() {
             if (drawJob?.isActive == true) return
 
             Log.d(TAG, "Draw loop started")
+            redrawRequested = true
 
             drawJob = scope.launch {
                 while (isActive) {
                     val frameStartMs = SystemClock.elapsedRealtime()
 
+                    var drew = false
                     if (engineVisible && surfaceReady && eglHelper.isReady) {
-                        applyPendingRendererUpdates()
-                        drawFrame()
+                        val inputChanged = applyPendingRendererUpdates()
+                        // 静止テーマで何も変わっていない間は、描き直さずに最後の絵を保持する
+                        if (redrawRequested || inputChanged || renderer.needsContinuousFrames()) {
+                            redrawRequested = false
+                            drawFrame()
+                            lastDrawnTiltX = lastAppliedTiltX
+                            lastDrawnTiltY = lastAppliedTiltY
+                            drew = true
+                        }
                     }
 
-                    val targetFrameMs = currentTargetFrameMs(frameStartMs)
-                    logFrameModeIfNeeded(targetFrameMs, frameStartMs)
+                    val targetFrameMs =
+                        if (drew) currentTargetFrameMs(frameStartMs) else STATIC_HOLD_POLL_MS
+                    logFrameModeIfNeeded(
+                        if (drew) targetFrameMs else STATIC_HOLD_MODE_KEY,
+                        frameStartMs
+                    )
 
                     val frameElapsedMs = SystemClock.elapsedRealtime() - frameStartMs
                     val sleepMs = (targetFrameMs - frameElapsedMs).coerceAtLeast(0L)
@@ -423,6 +467,7 @@ class IgniterWallpaperService : WallpaperService() {
             lastLoggedFrameMs = targetFrameMs
 
             val mode = when (targetFrameMs) {
+                STATIC_HOLD_MODE_KEY -> "STATIC_HOLD"
                 ACTIVE_FRAME_MS -> "ACTIVE_60FPS"
                 IDLE_FRAME_MS -> "IDLE_30FPS"
                 DEEP_IDLE_FRAME_MS -> "DEEP_IDLE_15FPS"
@@ -436,8 +481,17 @@ class IgniterWallpaperService : WallpaperService() {
             )
         }
 
-        private fun applyPendingRendererUpdates() {
-            renderer.updateTilt(pendingTiltX, pendingTiltY)
+        /** 新しい入力があったか（静止テーマでも描き直すべきか）を返す。 */
+        private fun applyPendingRendererUpdates(): Boolean {
+            // センサースレッドが書き換えても食い違わないよう、一度ローカルに取ってから使う
+            val tiltX = pendingTiltX
+            val tiltY = pendingTiltY
+            renderer.updateTilt(tiltX, tiltY)
+            lastAppliedTiltX = tiltX
+            lastAppliedTiltY = tiltY
+            val tiltChanged =
+                abs(tiltX - lastDrawnTiltX) > TILT_REDRAW_EPSILON ||
+                        abs(tiltY - lastDrawnTiltY) > TILT_REDRAW_EPSILON
 
             var localHasTouch = false
             var localTouchX = 0f
@@ -477,6 +531,8 @@ class IgniterWallpaperService : WallpaperService() {
             ) {
                 renderer.startShutter()
             }
+
+            return tiltChanged || localHasTouch || localWaveMomentum > 0f
         }
 
         private fun requestShutter() {
